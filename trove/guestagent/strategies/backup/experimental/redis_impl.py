@@ -17,6 +17,8 @@ from oslo_log import log as logging
 
 from trove.guestagent.datastore.experimental.redis import service
 from trove.guestagent.strategies.backup import base
+from trove.guestagent.common import guestagent_utils
+from trove.guestagent.common import operating_system as os
 
 LOG = logging.getLogger(__name__)
 
@@ -37,3 +39,8 @@ class RedisBackup(base.BackupRunner):
     def _run_pre_backup(self):
         self.app.admin.persist_data()
         LOG.debug('Redis data persisted.')
+
+    def _run_post_backup(self):
+        dump_file = guestagent_utils.build_file_path(self.app.get_working_dir(),self.app.get_db_filename())
+        os.remove(dump_file,as_root=True)
+        LOG.debug('Remove dump.rdb after creating backup')

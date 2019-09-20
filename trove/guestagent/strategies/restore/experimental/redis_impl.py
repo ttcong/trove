@@ -21,6 +21,7 @@ from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.redis import service
 from trove.guestagent.datastore.experimental.redis import system
 from trove.guestagent.strategies.restore import base
+from trove.guestagent.common import guestagent_utils
 
 LOG = logging.getLogger(__name__)
 
@@ -72,3 +73,8 @@ class RedisBackup(base.RestoreRunner):
             self.app.configuration_manager.remove_system_override(
                 change_id=self.CONF_LABEL_AOF_TEMP_OFF)
             self.app.start_db()
+
+        # Remove dump.rdb after restored.
+        dump_file = guestagent_utils.build_file_path(self.app.get_working_dir(),self.app.get_db_filename())
+        operating_system.remove(dump_file,as_root=True)
+        LOG.debug('Remove dump.rdb after restored')
