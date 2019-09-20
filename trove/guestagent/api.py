@@ -140,7 +140,7 @@ class API(object):
         LOG.debug("Creating Users for instance %s.", self.id)
         version = self.API_BASE_VERSION
 
-        self._cast("create_user", version=version, users=users)
+        self._cast("create_master_user", version=version, users=users)
 
     def get_user(self, username, hostname):
         """Make an asynchronous call to get a single database user."""
@@ -311,7 +311,7 @@ class API(object):
                           self.agent_low_timeout, version=version)
 
     def prepare(self, memory_mb, packages, databases, users,
-                device_path='/dev/vdb', mount_point='/mnt/volume',
+                device_path='/dev/sdb', mount_point='/mnt/volume',
                 backup_info=None, config_contents=None, root_password=None,
                 overrides=None, cluster_config=None, snapshot=None,
                 modules=None):

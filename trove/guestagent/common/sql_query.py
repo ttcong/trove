@@ -14,11 +14,9 @@
 #    under the License.
 
 """
-
 Intermediary class for building SQL queries for use by the guest agent.
 Do not hard-code strings into the guest agent; use this module to build
 them for you.
-
 """
 
 
@@ -382,7 +380,7 @@ class SetPassword(object):
                       'user_host': self.host,
                       'new_password': self.new_password}
         return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
-                "PASSWORD('%(new_password)s');" % properties)
+                "'%(new_password)s';" % properties)
 
 
 class DropUser(object):

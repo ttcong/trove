@@ -1,4 +1,3 @@
-# Copyright 2015 Tesora, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -329,7 +328,9 @@ class Manager(periodic_task.PeriodicTasks):
             try:
                 if users:
                     LOG.info("Creating users (called from 'prepare')")
-                    self.create_user(context, users)
+                    # Switch to create master_user
+                    #self.create_user(context, users)
+                    self.create_master_user(context, users)
                     LOG.info('Users created successfully.')
             except Exception as ex:
                 LOG.exception("An error occurred creating users: "
@@ -791,6 +792,12 @@ class Manager(periodic_task.PeriodicTasks):
         with EndNotification(context):
             raise exception.DatastoreOperationNotSupported(
                 operation='create_user', datastore=self.manager)
+            
+    def create_master_user(self, context, users):
+        LOG.debug("Creating master users.")
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='create_master_user', datastore=self.manager)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):

@@ -37,7 +37,7 @@ class MySQLRestoreMixin(object):
     """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
-
+    #New SET PASSWORD FOR syntax.
     RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
                                  "'root'@'localhost'='';")
     # This is a suffix MySQL appends to the file name given in

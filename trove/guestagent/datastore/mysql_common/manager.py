@@ -141,6 +141,10 @@ class MySqlManager(manager.Manager):
         with EndNotification(context):
             self.mysql_admin().create_user(users)
 
+    def create_master_user(self, context, users):
+        with EndNotification(context):
+            self.mysql_admin().create_master_user(users)
+
     def delete_database(self, context, database):
         with EndNotification(context):
             return self.mysql_admin().delete_database(database)
