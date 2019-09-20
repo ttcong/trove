@@ -679,7 +679,9 @@ class BaseMySqlApp(object):
         with all privileges similar to the root user.
         """
         LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
-        host = "127.0.0.1"
+        #Turn off skip-name-resolve
+        #host = "127.0.0.1"
+        host = "localhost"
         try:
             cu = sql_query.CreateUser(ADMIN_USER_NAME, host=host,
                                       clear=password)
