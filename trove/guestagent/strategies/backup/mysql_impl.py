@@ -57,11 +57,11 @@ class InnoBackupEx(base.BackupRunner):
 
     @property
     def cmd(self):
-        cmd = ('sudo innobackupex'
-               ' --stream=xbstream'
+        #Xtrabackup: Innobackupex deprecated. Using xtrabackup.
+        cmd = ('sudo xtrabackup'
+               ' --backup --stream=xbstream'
                ' %(extra_opts)s ' +
                self.user_and_pass +
-               MySqlApp.get_data_dir() +
                ' 2>/tmp/innobackupex.log'
                )
         return cmd + self.zip_cmd + self.encrypt_cmd
@@ -111,14 +111,14 @@ class InnoBackupExIncremental(InnoBackupEx):
 
     @property
     def cmd(self):
-        cmd = ('sudo innobackupex'
-               ' --stream=xbstream'
+        # Innobackupex deprecated. Use xtrabackup
+        cmd = ('sudo xtrabackup'
+               ' --backup --stream=xbstream'
                ' --incremental'
                ' --incremental-lsn=%(lsn)s'
                ' %(extra_opts)s ' +
                self.user_and_pass +
-               MySqlApp.get_data_dir() +
-               ' 2>/tmp/innobackupex.log')
+               ' 2>/tmp/innobackupex.log') 
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     def metadata(self):

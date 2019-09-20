@@ -39,7 +39,7 @@ class MySQLRestoreMixin(object):
     RESET_ROOT_SLEEP_INTERVAL = 10
 
     RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
-                                 "'root'@'localhost'=PASSWORD('');")
+                                 "'root'@'localhost'='';")
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'
@@ -182,12 +182,11 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
     __strategy_name__ = 'innobackupex'
     base_restore_cmd = ('sudo xbstream -x -C %(restore_location)s'
                         ' 2>/tmp/xbstream_extract.log')
-    base_prepare_cmd = ('sudo innobackupex'
-                        ' --defaults-file=%(restore_location)s/backup-my.cnf'
-                        ' --ibbackup=xtrabackup'
-                        ' --apply-log'
-                        ' %(restore_location)s'
-                        ' 2>/tmp/innoprepare.log')
+    
+    # Innobackupex deprecated. Use xtrabackup 
+    base_prepare_cmd = ('sudo xtrabackup --prepare'
+                        ' --target-dir=%(restore_location)s'
+                        ' 2>/tmp/xtrabackup_prepare.log')
 
     def __init__(self, *args, **kwargs):
         self._app = None
@@ -213,9 +212,9 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         utils.clean_out(self.restore_location)
 
     def _run_prepare(self):
-        LOG.debug("Running innobackupex prepare: %s.", self.prepare_cmd)
+        LOG.debug("Running xtrabackup prepare: %s.", self.prepare_cmd)
         self.prep_retcode = utils.execute(self.prepare_cmd, shell=True)
-        LOG.info("Innobackupex prepare finished successfully.")
+        LOG.info("Xtrabackup prepare finished successfully.")
 
     def post_restore(self):
         self._run_prepare()
@@ -248,6 +247,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         LOG.debug('Checking xbstream restore process stderr output.')
         IGNORE_LINES = [
             'encryption: using gcrypt ',
+            'sudo: unable to resolve host ',
         ]
         with open('/tmp/xbstream_extract.log', 'r') as xbstream_log:
             for line in xbstream_log:
@@ -270,14 +270,11 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 
 class InnoBackupExIncremental(InnoBackupEx):
     __strategy_name__ = 'innobackupexincremental'
-    incremental_prep = ('sudo innobackupex'
-                        ' --defaults-file=%(restore_location)s/backup-my.cnf'
-                        ' --ibbackup=xtrabackup'
-                        ' --apply-log'
-                        ' --redo-only'
-                        ' %(restore_location)s'
+    incremental_prep = ('sudo xtrabackup --prepare'
+                        ' --apply-log-only'
+                        ' --target-dir=%(restore_location)s'
                         ' %(incremental_args)s'
-                        ' 2>/tmp/innoprepare.log')
+                        ' 2>/tmp/xtraprepare.log')
 
     def __init__(self, *args, **kwargs):
         super(InnoBackupExIncremental, self).__init__(*args, **kwargs)
@@ -306,9 +303,9 @@ class InnoBackupExIncremental(InnoBackupEx):
 
     def _incremental_prepare(self, incremental_dir):
         prepare_cmd = self._incremental_prepare_cmd(incremental_dir)
-        LOG.debug("Running innobackupex prepare: %s.", prepare_cmd)
+        LOG.debug("Running xtrabackup prepare: %s.", prepare_cmd)
         utils.execute(prepare_cmd, shell=True)
-        LOG.info("Innobackupex prepare finished successfully.")
+        LOG.info("Xtrabackup prepare finished successfully.")
 
     def _incremental_restore(self, location, checksum):
         """Recursively apply backups from all parents.
@@ -351,9 +348,9 @@ class InnoBackupExIncremental(InnoBackupEx):
     def _run_restore(self):
         """Run incremental restore.
 
-        First grab all parents and prepare them with '--redo-only'. After
+        First grab all parents and prepare them with '--apply-log-only'. After
         all backups are restored the super class InnoBackupEx post_restore
-        method is called to do the final prepare with '--apply-log'
+        method is called to do the final prepare without '--apply-log-only'
         """
         self._incremental_restore(self.location, self.checksum)
         return self.content_length
