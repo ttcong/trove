@@ -132,6 +132,12 @@ class Manager(manager.Manager):
         with EndNotification(context):
             return service.MongoDBAdmin().create_users(users)
 
+    #For Master_User
+    def create_master_user(self, context, users):
+        LOG.debug("Creating master user.")
+        with EndNotification(context):
+            return service.MongoDBAdmin().create_master_user(users)
+
     def delete_database(self, context, database):
         LOG.debug("Deleting database.")
         with EndNotification(context):

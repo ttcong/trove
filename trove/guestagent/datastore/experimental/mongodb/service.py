@@ -531,6 +531,25 @@ class MongoDBAdmin(object):
                     LOG.warning('Skipping creation of user with name '
                                 '%(user)s', {'user': user.name})
 
+    def create_master_user(self, users):
+        """Create master_users and grant them privileges for the
+           specified databases.
+        """
+        with MongoDBClient(self._admin_user()) as client:
+            for item in users:
+                user = models.MongoDBUser.deserialize(item)
+                try:
+                    user.check_create()
+                    if self._get_user_record(user.name, client=client):
+                        raise ValueError(_('User with name %(user)s already '
+                                           'exists.') % {'user': user.name})
+                    self.create_validated_user(user, client=client)
+                except (ValueError, pymongo.errors.PyMongoError) as e:
+                    LOG.error(e)
+                    LOG.warning('Skipping creation of user with name '
+                                '%(user)s', {'user': user.name})
+
+
     def delete_validated_user(self, user):
         """Deletes a user from their database. The caller should ensure that
         this action is valid.
@@ -658,14 +677,18 @@ class MongoDBAdmin(object):
         for db_name in databases:
             # verify the database name
             models.MongoDBSchema(db_name)
-            role = {'db': db_name, 'role': 'readWrite'}
-            if role not in user.roles:
-                LOG.debug('Adding role %(role)s to user %(user)s.',
-                          {'role': str(role), 'user': username})
-                user.roles = role
-            else:
-                LOG.debug('User %(user)s already has role %(role)s.',
-                          {'user': username, 'role': str(role)})
+            # Create Master_User with Master_User_Grants
+            LOG.info("Grant access for master_user")
+            roleList = CONF.master_user_grant
+            for roleName in roleList:
+                role = {'db': db_name, 'role': roleName}
+                if role not in user.roles:
+                    LOG.debug('Adding role %(role)s to user %(user)s.',
+                              {'role': str(roleName), 'user': username})
+                    user.roles = role
+                else:
+                    LOG.debug('User %(user)s already has role %(role)s.',
+                              {'user': username, 'role': str(roleName)})
         LOG.debug('Updating user %s.', username)
         self._update_user_roles(user)
 
