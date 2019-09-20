@@ -389,7 +389,12 @@ class RedisApp(object):
 
     def get_node_ip(self):
         """Returns [ip, port] where both values are strings"""
-        return self._get_node_details()[1].split(':')
+        """Add support for Redis Cluster version >4.0"""        
+        ip_port = self._get_node_details()[1]
+        if '@' in ip_port:
+            return ip_port.split('@')[0].split(':')
+        else: 
+            return ip_port.split(':')
 
     def get_node_id_for_removal(self):
         node_details = self._get_node_details()
