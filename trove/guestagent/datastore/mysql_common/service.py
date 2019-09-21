@@ -50,7 +50,7 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 ADMIN_USER_NAME = "os_admin"
-CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@127.0.0.1:3306"
+CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
@@ -679,8 +679,6 @@ class BaseMySqlApp(object):
         with all privileges similar to the root user.
         """
         LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
-        #Turn off skip-name-resolve
-        #host = "127.0.0.1"
         host = "localhost"
         try:
             cu = sql_query.CreateUser(ADMIN_USER_NAME, host=host,
@@ -775,7 +773,7 @@ class BaseMySqlApp(object):
     def _save_authentication_properties(self, admin_password):
         client_sect = {'client': {'user': ADMIN_USER_NAME,
                                   'password': admin_password,
-                                  'host': '127.0.0.1'}}
+                                  'host': 'localhost'}}
         operating_system.write_file(self.get_client_auth_file(),
                                     client_sect, codec=self.CFG_CODEC)
 
