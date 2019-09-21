@@ -1,11 +1,12 @@
 =====
-Trove. Stable/Queens
+Trove Stable/Queens
 =====
 
 .. image:: https://governance.openstack.org/tc/badges/trove.svg
     :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 Continue in Stable/Queens Branch.
+
 Trove is Database as a Service for OpenStack.
 
 Getting Started
