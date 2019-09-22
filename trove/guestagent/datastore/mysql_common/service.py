@@ -50,7 +50,7 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 ADMIN_USER_NAME = "os_admin"
-CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306"
+CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306/mysql?unix_socket=/var/run/mysqld/mysqld.sock"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
@@ -717,7 +717,7 @@ class BaseMySqlApp(object):
         # Save the password to root's private .my.cnf file
         root_sect = {'client': {'user': 'root',
                                 'password': new_password,
-                                'host': localhost}}
+                                'host': 'localhost'}}
         operating_system.write_file('/root/.my.cnf',
                                     root_sect, codec=IniCodec(), as_root=True)
 
@@ -746,7 +746,8 @@ class BaseMySqlApp(object):
             CONNECTION_STR_FORMAT % ('root', ''), echo=True)
         with self.local_sql_client(engine, use_flush=False) as client:
             self._create_admin_user(client, admin_password)
-
+            self._generate_root_password(client)
+        
         LOG.debug("Switching to the '%s' user now.", ADMIN_USER_NAME)
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
