@@ -37,9 +37,9 @@ class MySQLRestoreMixin(object):
     """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
-    # SET PASSWORD syntax for MySQL <=5.6, MariaDB <=10.1
+    #New SET PASSWORD FOR syntax for MySQL 5.7, 8.0
     RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
-                                 "'root'@'localhost'=PASSWORD('');")
+                                 "'root'@'localhost'='';")
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'

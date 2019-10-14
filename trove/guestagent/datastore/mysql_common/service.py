@@ -50,7 +50,8 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 ADMIN_USER_NAME = "os_admin"
-CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306/mysql?unix_socket=/var/run/mysqld/mysqld.sock"
+#CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306/mysql?unix_socket=/var/run/mysqld/mysqld.sock"
+CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@127.0.0.1:3306"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
@@ -343,6 +344,10 @@ class BaseMySqlAdmin(object):
                 t = text(str(g))
                 client.execute(t)
 
+                # Workaround: Save master user name into file
+                with open(guestagent_utils.build_file_path("~", "master_user"), 'w+') as fp:
+                    fp.write(user.name)
+                
 
     def delete_database(self, database):
         """Delete the specified database."""
@@ -639,6 +644,7 @@ class BaseMySqlApp(object):
             return ENGINE
 
         pwd = self.get_auth_password()
+        LOG.debug(pwd)
         ENGINE = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
                                      urllib.parse.quote(pwd.strip())),
@@ -679,7 +685,7 @@ class BaseMySqlApp(object):
         with all privileges similar to the root user.
         """
         LOG.debug("Creating Trove admin user '%s'.", ADMIN_USER_NAME)
-        host = "localhost"
+        host = "127.0.0.1"
         try:
             cu = sql_query.CreateUser(ADMIN_USER_NAME, host=host,
                                       clear=password)
@@ -746,8 +752,17 @@ class BaseMySqlApp(object):
             CONNECTION_STR_FORMAT % ('root', ''), echo=True)
         with self.local_sql_client(engine, use_flush=False) as client:
             self._create_admin_user(client, admin_password)
-            self._generate_root_password(client)
         
+        # Enable skip-name-resolve
+        operating_system.move("/etc/mysql/conf.d/01-vdbaas-additional-config.cnf_bk",
+                              "/etc/mysql/conf.d/01-vdbaas-additional-config.cnf",
+                              as_root=True)
+
+        operating_system.chown("/etc/mysql/conf.d/01-vdbaas-additional-config.cnf",
+                               "mysql",
+                               "mysql",
+                               as_root=True)
+
         LOG.debug("Switching to the '%s' user now.", ADMIN_USER_NAME)
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
@@ -774,7 +789,7 @@ class BaseMySqlApp(object):
     def _save_authentication_properties(self, admin_password):
         client_sect = {'client': {'user': ADMIN_USER_NAME,
                                   'password': admin_password,
-                                  'host': 'localhost'}}
+                                  'host': '127.0.0.1'}}
         operating_system.write_file(self.get_client_auth_file(),
                                     client_sect, codec=self.CFG_CODEC)
 

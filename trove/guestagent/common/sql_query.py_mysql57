@@ -379,9 +379,8 @@ class SetPassword(object):
         properties = {'user_name': self.user,
                       'user_host': self.host,
                       'new_password': self.new_password}
-        # Syntax for MySQL <=5.6, MariaDB <=10.1
         return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
-                " PASSWORD('%(new_password)s');" % properties)
+                "'%(new_password)s';" % properties)
 
 
 class DropUser(object):
