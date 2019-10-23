@@ -23,7 +23,8 @@ from trove.common.i18n import _
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql_common.service import ADMIN_USER_NAME
 from trove.guestagent.strategies.backup import base
-
+from trove.guestagent.common import operating_system as os
+from trove.guestagent.common import guestagent_utils
 LOG = logging.getLogger(__name__)
 
 
@@ -98,6 +99,17 @@ class InnoBackupEx(base.BackupRunner):
     def filename(self):
         return '%s.xbstream' % self.base_filename
 
+    def _run_pre_backup(self):
+        master_user = guestagent_utils.build_file_path("~","master_user")
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+        os.copy(master_user,tmp,as_root=True)
+        os.chown(tmp,'mysql','mysql',as_root=True)
+        LOG.debug('Backup Master_User file to data_dir') 
+
+    def _run_post_backup(self):
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+        os.remove(tmp,as_root=True)
+        LOG.debug('Remove temp file in data_dir after creating backup')
 
 class InnoBackupExIncremental(InnoBackupEx):
     """InnoBackupEx incremental backup."""
@@ -128,3 +140,15 @@ class InnoBackupExIncremental(InnoBackupEx):
             'parent_checksum': self.parent_checksum,
         })
         return _meta
+
+    def _run_pre_backup(self):
+        master_user = guestagent_utils.build_file_path("~","master_user")
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+        os.copy(master_user,tmp,as_root=True)
+        os.chown(tmp,'mysql','mysql',as_root=True)
+        LOG.debug('Backup Master_User file to data_dir')
+
+    def _run_post_backup(self):
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+        os.remove(tmp,as_root=True)
+        LOG.debug('Remove temp file in data_dir after creating backup')

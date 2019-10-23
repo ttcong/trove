@@ -345,7 +345,7 @@ class BaseMySqlAdmin(object):
                 client.execute(t)
 
                 # Workaround: Save master user name into file
-                with open(guestagent_utils.build_file_path("~", "master_user"), 'w+') as fp:
+                with open(guestagent_utils.build_file_path("~","master_user"), 'w+') as fp:
                     fp.write(user.name)
                 
 

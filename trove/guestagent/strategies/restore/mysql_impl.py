@@ -26,6 +26,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import operating_system
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common.operating_system import FileMode
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent.strategies.restore import base
@@ -37,9 +38,9 @@ class MySQLRestoreMixin(object):
     """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
-    # SET PASSWORD syntax for MySQL <=5.6, MariaDB <=10.1
+    #New SET PASSWORD FOR syntax for MySQL 5.7, 8.0
     RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
-                                 "'root'@'localhost'=PASSWORD('');")
+                                 "'root'@'localhost'='';")
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'
@@ -220,6 +221,15 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         self._run_prepare()
         operating_system.chown(self.restore_location, 'mysql', None,
                                force=True, as_root=True)
+        
+        master_user = guestagent_utils.build_file_path("~","master_user")
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+
+        if (operating_system.exists(tmp, is_directory=False, as_root=True)):
+          operating_system.move(tmp,master_user,force=True,as_root=True)
+          operating_system.chown(master_user,'trove','trove',as_root=True)
+          LOG.debug('Restored Master_User file')
+
         self._delete_old_binlogs()
         self.reset_root_password()
         self.app.start_mysql()
@@ -354,3 +364,13 @@ class InnoBackupExIncremental(InnoBackupEx):
         """
         self._incremental_restore(self.location, self.checksum)
         return self.content_length
+
+    def post_restore(self):
+        master_user = guestagent_utils.build_file_path("~","master_user")
+        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+
+        if (operating_system.exists(tmp, is_directory=False, as_root=True)):
+          operating_system.move(tmp,master_user,force=True,as_root=True)
+          operating_system.chown(master_user,'trove','trove',as_root=True)
+          LOG.debug('Restored Master_User file')
+
