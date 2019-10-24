@@ -92,7 +92,7 @@ def clear_expired_password():
     """
     LOG.debug("Removing expired password.")
     secret_file = "/root/.mysql_secret"
-    if (!operating_system.exists(secret_file,is_directory=False,as_root=True)):
+    if (not operating_system.exists(secret_file,is_directory=False,as_root=True)):
         LOG.exception("/root/.mysql_secret does not exist.")
         return
 
