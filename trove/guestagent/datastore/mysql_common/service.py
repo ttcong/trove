@@ -92,12 +92,10 @@ def clear_expired_password():
     """
     LOG.debug("Removing expired password.")
     secret_file = "/root/.mysql_secret"
-    try:
-        out, err = utils.execute("cat", secret_file,
-                                 run_as_root=True, root_helper="sudo")
-    except exception.ProcessExecutionError:
+    if (!operating_system.exists(secret_file,is_directory=False,as_root=True)):
         LOG.exception("/root/.mysql_secret does not exist.")
         return
+
     m = re.match('# The random password set for the root user at .*: (.*)',
                  out)
     if m:
@@ -330,15 +328,15 @@ class BaseMySqlAdmin(object):
             for item in users:
                 user = models.MySQLUser.deserialize(item)
                 user.check_create()
-                
+
                 #Create user
                 cu = sql_query.CreateUser(user.name, host=user.host,
                                           clear=user.password)
                 t = text(str(cu))
                 client.execute(t, **cu.keyArgs)
-                
+
                 #grant master_user_grants
-                g = sql_query.Grant(permissions=CONF.master_user_grant, 
+                g = sql_query.Grant(permissions=CONF.master_user_grant,
                                     user=user.name,host=user.host,
                                     grant_option=CONF.master_user_grant_option)
                 t = text(str(g))
@@ -347,7 +345,7 @@ class BaseMySqlAdmin(object):
                 # Workaround: Save master user name into file
                 with open(guestagent_utils.build_file_path("~","master_user"), 'w+') as fp:
                     fp.write(user.name)
-                
+
 
     def delete_database(self, database):
         """Delete the specified database."""
@@ -752,7 +750,7 @@ class BaseMySqlApp(object):
             CONNECTION_STR_FORMAT % ('root', ''), echo=True)
         with self.local_sql_client(engine, use_flush=False) as client:
             self._create_admin_user(client, admin_password)
-        
+
         # Enable skip-name-resolve
         operating_system.move("/etc/mysql/conf.d/01-vdbaas-additional-config.cnf_bk",
                               "/etc/mysql/conf.d/01-vdbaas-additional-config.cnf",
