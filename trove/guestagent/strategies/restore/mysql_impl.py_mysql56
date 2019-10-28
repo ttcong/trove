@@ -227,7 +227,7 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 
         if (operating_system.exists(tmp, is_directory=False, as_root=True)):
           operating_system.move(tmp,master_user,force=True,as_root=True)
-          operating_system.chown(tmp,'trove','trove',as_root=True)
+          operating_system.chown(master_user,'trove','trove',as_root=True)
           LOG.debug('Restored Master_User file')
 
         self._delete_old_binlogs()
