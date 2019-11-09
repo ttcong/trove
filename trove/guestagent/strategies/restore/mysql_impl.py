@@ -364,12 +364,3 @@ class InnoBackupExIncremental(InnoBackupEx):
         """
         self._incremental_restore(self.location, self.checksum)
         return self.content_length
-
-    # def post_restore(self):
-    #     master_user = guestagent_utils.build_file_path("~","master_user")
-    #     tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
-    #
-    #     if (operating_system.exists(tmp, is_directory=False, as_root=True)):
-    #       operating_system.move(tmp,master_user,force=True,as_root=True)
-    #       operating_system.chown(master_user,'trove','trove',as_root=True)
-    #       LOG.debug('Restored Master_User file')
