@@ -284,6 +284,23 @@
             "name": "aof-rewrite-incremental-fsync",
             "restart_required": false,
             "type": "boolean"
+        },
+        {
+            "name": "activedefrag",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "lfu-decay-time",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "lfu-log-factor",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
         }
     ]
 }
