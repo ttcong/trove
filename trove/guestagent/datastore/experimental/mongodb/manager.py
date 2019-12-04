@@ -16,7 +16,7 @@
 import os
 
 from oslo_log import log as logging
-
+from trove.common import utils
 from trove.common import instance as ds_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
@@ -83,10 +83,15 @@ class Manager(manager.Manager):
             # Create the Trove admin user.
             self.app.secure()
 
+
         # Don't start mongos until add_config_servers is invoked,
         # don't start members as they should already be running.
         if not (self.app.is_query_router or self.app.is_cluster_member):
             self.app.start_db(update_db=True)
+            # Fixme (congtt): init configSrvReplSet
+            # Is it cover configSrvReplSet with more than 1 node ?
+            if cluster_config:
+                utils.execute_with_timeout(system.MONGODB_INIT, shell=True)
 
         if not cluster_config and backup_info:
             self._perform_restore(backup_info, context, mount_point, self.app)

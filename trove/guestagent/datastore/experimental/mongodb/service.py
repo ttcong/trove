@@ -209,6 +209,8 @@ class MongoDBApp(object):
         self.start_db()
         self.configuration_manager.apply_system_override(
             {'replication.replSetName': replica_set_name}, CNF_CLUSTER)
+        self.configuration_manager.apply_system_override(
+            {'sharding.clusterRole': 'shardsvr'}, CNF_CLUSTER)
 
     def _configure_cluster_security(self, key_value):
         """Force cluster key-file-based authentication.
@@ -257,8 +259,9 @@ class MongoDBApp(object):
         config_servers_string = ','.join(['%s:%s' % (host, CONFIGSVR_PORT)
                                           for host in config_server_hosts])
         LOG.info("Setting config servers: %s", config_servers_string)
+        # Fixme (hoanm): New syntax for sharding.configDB in MongoDB Cluster > 3.4
         self.configuration_manager.apply_system_override(
-            {'sharding.configDB': config_servers_string}, CNF_CLUSTER)
+            {'sharding.configDB': "ConfigReplSet/" + config_servers_string}, CNF_CLUSTER)
         self.start_db(True)
 
     def add_shard(self, replica_set_name, replica_set_member):

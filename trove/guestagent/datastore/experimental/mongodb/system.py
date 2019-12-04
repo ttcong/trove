@@ -37,6 +37,8 @@ MONGOS_SERVICE_CANDIDATES = ["mongos"]
 MONGOD_SERVICE_CANDIDATES = ["mongodb", "mongod"]
 MONGODB_KILL = "sudo kill %s"
 FIND_PID = "ps xaco pid,cmd | awk '/mongo(d|db|s)/ {print $1}'"
+# hoanm: init configSrvReplSet
+MONGODB_INIT = "mongo --port 27019 --eval 'printjson(rs.initiate())'"
 TIME_OUT = 1000
 
 MONGO_USER = {operating_system.REDHAT: "mongod",
