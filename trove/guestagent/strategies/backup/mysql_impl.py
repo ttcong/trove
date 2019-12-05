@@ -101,15 +101,17 @@ class InnoBackupEx(base.BackupRunner):
 
     def _run_pre_backup(self):
         master_user = guestagent_utils.build_file_path("~","master_user")
-        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
-        os.copy(master_user,tmp,as_root=True)
-        os.chown(tmp,'mysql','mysql',as_root=True)
-        LOG.debug('Backup Master_User file to data_dir') 
+        if (os.exists(master_user, is_directory=False, as_root=True)):
+          tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+          os.copy(master_user,tmp,as_root=True)
+          os.chown(tmp,'mysql','mysql',as_root=True)
+          LOG.debug('Backup Master_User file to data_dir')
 
     def _run_post_backup(self):
         tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
-        os.remove(tmp,as_root=True)
-        LOG.debug('Remove temp file in data_dir after creating backup')
+        if (os.exists(tmp, is_directory=False, as_root=True)):
+          os.remove(tmp,as_root=True)
+          LOG.debug('Remove temp file in data_dir after creating backup')
 
 class InnoBackupExIncremental(InnoBackupEx):
     """InnoBackupEx incremental backup."""
@@ -130,7 +132,7 @@ class InnoBackupExIncremental(InnoBackupEx):
                ' --incremental-lsn=%(lsn)s'
                ' %(extra_opts)s ' +
                self.user_and_pass +
-               ' 2>/tmp/innobackupex.log') 
+               ' 2>/tmp/innobackupex.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     def metadata(self):
@@ -143,12 +145,14 @@ class InnoBackupExIncremental(InnoBackupEx):
 
     def _run_pre_backup(self):
         master_user = guestagent_utils.build_file_path("~","master_user")
-        tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
-        os.copy(master_user,tmp,as_root=True)
-        os.chown(tmp,'mysql','mysql',as_root=True)
-        LOG.debug('Backup Master_User file to data_dir')
+        if (os.exists(master_user, is_directory=False, as_root=True)):
+          tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
+          os.copy(master_user,tmp,as_root=True)
+          os.chown(tmp,'mysql','mysql',as_root=True)
+          LOG.debug('Backup Master_User file to data_dir')
 
     def _run_post_backup(self):
         tmp = guestagent_utils.build_file_path("/var/lib/mysql/data/mysql","master_user","TRN")
-        os.remove(tmp,as_root=True)
-        LOG.debug('Remove temp file in data_dir after creating backup')
+        if (os.exists(tmp, is_directory=False, as_root=True)):
+          os.remove(tmp,as_root=True)
+          LOG.debug('Remove temp file in data_dir after creating backup')
