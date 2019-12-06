@@ -112,8 +112,10 @@ class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
 
     @property
     def cmd(self):
+        # congtt: Fix option for Postgresql 10.
+        # --xlog = --wal-method=fetch
         cmd = ("pg_basebackup -h %s -U %s --pgdata=-"
-               " --label=%s --format=tar --xlog " %
+               " --label=%s --format=tar --wal-method=fetch " %
                (self.app.pgsql_run_dir, self.app.ADMIN_USER,
                 self.base_filename))
 
@@ -232,7 +234,8 @@ class PgBaseBackupIncremental(PgBaseBackup):
         self.backup_label = self.base_filename
         self.start_segment = self.app.pg_start_backup(self.backup_label)
 
-        self.start_wal_file = self.app.pg_xlogfile_name(self.start_segment)
+        # congtt: Postgre 10 change pg_xlogfile_name to pg_walfile_name
+        self.start_wal_file = self.app.pg_walfile_name(self.start_segment)
 
         self.stop_segment = self.app.pg_stop_backup()
 
