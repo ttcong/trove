@@ -193,7 +193,8 @@ max_stack_depth = 7MB			# min 100kB
 
 # - Settings -
 
-wal_level = minimal			# minimal, archive, hot_standby, or logical
+
+#wal_level = replica			# congtt2: Update for Postgre 10: minimal, replica or logical
 					# (change requires restart)
 					# (controlled by Trove)
 #fsync = on				# turns forced synchronization on or off
@@ -245,8 +246,9 @@ archive_mode = off		# allows archiving to be done
 
 # Set these on the master and on any standby that will send replication data.
 
-#max_wal_senders = 0		# max number of walsender processes
+#max_wal_senders = 10		# max number of walsender processes
 				# (change requires restart)
+				# Postgre 10 default: 10
 #wal_keep_segments = 0		# in logfile segments, 16MB each; 0 disables
 #wal_sender_timeout = 60s	# in milliseconds; 0 disables
 
@@ -308,8 +310,8 @@ archive_mode = off		# allows archiving to be done
 #cpu_tuple_cost = 0.01			# same scale as above
 #cpu_index_tuple_cost = 0.005		# same scale as above
 #cpu_operator_cost = 0.0025		# same scale as above
-effective_cache_size = {{ max(flavor['ram'] - 512, 512)|int }}MB	# Set to the amount of available RAM 
-					# less the minimum required for other processes or 512MB. 
+effective_cache_size = {{ max(flavor['ram'] - 512, 512)|int }}MB	# Set to the amount of available RAM
+					# less the minimum required for other processes or 512MB.
 
 # - Genetic Query Optimizer -
 
