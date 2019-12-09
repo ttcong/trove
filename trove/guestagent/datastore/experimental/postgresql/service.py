@@ -228,8 +228,11 @@ class PgSqlApp(object):
         # The first failure to authenticate stops the lookup.
         # That is why the 'local' connections validate first.
         # The OrderedDict is necessary to guarantee the iteration order.
+
+        # congtt: Admins can access from local only.
+        #         Master user (from remote) require password
         local_admins = ','.join([self.default_superuser_name, self.ADMIN_USER])
-        remote_admins = self.ADMIN_USER
+        remote_admins = ','.join([self.default_superuser_name, self.ADMIN_USER])
         access_rules = OrderedDict(
             [('local', [['all', local_admins, None, 'trust'],
                         ['replication', local_admins, None, 'trust'],
@@ -412,23 +415,26 @@ class PgSqlApp(object):
         admin._create_admin_user(context, os_admin,
                                  encrypt_password=True)
 
-        PgSqlAdmin(os_admin).alter_user(context, postgres, None,
+        #congtt: No need to disable default user to login.
+        #PgSqlAdmin(os_admin).alter_user(context, postgres, None,
                                         'NOSUPERUSER', 'NOLOGIN')
 
         self.set_current_admin_user(os_admin)
 
-    def pg_current_xlog_location(self):
-        """Wrapper for pg_current_xlog_location()
+    def pg_current_wal_lsn(self):
+        """Wrapper for pg_current_wal_lsn()
         Cannot be used against a running slave
         """
-        r = self.build_admin().query("SELECT pg_current_xlog_location()")
+        #congtt: Update syntax for Postgre 10
+        r = self.build_admin().query("SELECT pg_current_wal_lsn()")
         return r[0][0]
 
-    def pg_last_xlog_replay_location(self):
-        """Wrapper for pg_last_xlog_replay_location()
+    def pg_last_wal_replay_lsn(self):
+        """Wrapper for pg_last_wal_replay_lsn()
          For use on standby servers
          """
-        r = self.build_admin().query("SELECT pg_last_xlog_replay_location()")
+        #congtt: Update syntax for Postgre 10
+        r = self.build_admin().query("SELECT pg_last_wal_replay_lsn()")
         return r[0][0]
 
     def pg_is_in_recovery(self):
@@ -569,15 +575,17 @@ class PgSqlApp(object):
 class PgSqlAppStatus(service.BaseDbStatus):
 
     HOST = 'localhost'
+    ADMIN_USER = 'os_admin'
 
     def __init__(self, tools_dir):
         super(PgSqlAppStatus, self).__init__()
         self._cmd = guestagent_utils.build_file_path(tools_dir, 'pg_isready')
 
     def _get_actual_db_status(self):
+        #congtt: Check status by os_admin.
         try:
             utils.execute_with_timeout(
-                self._cmd, '-h', self.HOST, log_output_on_error=True)
+                self._cmd, '-h', self.HOST, '-U', self.ADMIN_USER, log_output_on_error=True)
             return instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
             return instance.ServiceStatuses.SHUTDOWN
@@ -730,6 +738,15 @@ class PgSqlAdmin(object):
         return [models.PostgreSQLSchema(
             row[0].strip(), character_set=row[1], collate=row[2])
             for row in results]
+
+    def create_master_user(self, context, users):
+        """Create master_users and grant them privileges for the
+           specified databases.
+        """
+        for user in users:
+            self._create_user(
+                context,
+                models.PostgreSQLUser.deserialize(user), None, ' '.join(CONF.master_user_grant))
 
     def create_user(self, context, users):
         """Create users and grant privileges for the specified databases.

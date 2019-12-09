@@ -106,6 +106,7 @@ class PgBaseBackup(base.RestoreRunner):
         )
 
         super(PgBaseBackup, self).__init__(*args, **kwargs)
+        self.pgsql_restore_cmd = "cp " + WAL_ARCHIVE_DIR + '/%f "%p"'
 
     @property
     def app(self):

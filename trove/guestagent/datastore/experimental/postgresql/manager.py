@@ -182,6 +182,10 @@ class Manager(manager.Manager):
         with EndNotification(context):
             self.admin.create_user(context, users)
 
+    def create_master_user(self, context, users):
+        with EndNotification(context):
+            self.admin.create_master_user(context, users)
+
     def list_users(
             self, context, limit=None, marker=None, include_marker=False):
         return self.admin.list_users(
@@ -281,9 +285,9 @@ class Manager(manager.Manager):
 
     def get_latest_txn_id(self, context):
         if self.app.pg_is_in_recovery():
-            lsn = self.app.pg_last_xlog_replay_location()
+            lsn = self.app.pg_last_wal_replay_lsn()
         else:
-            lsn = self.app.pg_current_xlog_location()
+            lsn = self.app.pg_current_wal_lsn()
         LOG.info("Last xlog location found: %s", lsn)
         return lsn
 
@@ -298,7 +302,7 @@ class Manager(manager.Manager):
                                  "not in recovery mode!"))
 
         def _wait_for_txn():
-            lsn = self.app.pg_last_xlog_replay_location()
+            lsn = self.app.pg_last_wal_replay_lsn()
             LOG.info("Last xlog location found: %s", lsn)
             return lsn >= txn
         try:
