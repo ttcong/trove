@@ -1167,7 +1167,7 @@ postgresql_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/postgresql',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.StrOpt('wal_archive_location', default='/mnt/wal_archive',
+    cfg.StrOpt('wal_archive_location', default='/var/lib/postgresql/wal_archive',
                help="Filesystem path storing WAL archive files when "
                     "WAL-shipping based backups or replication "
                     "is enabled."),
