@@ -416,8 +416,7 @@ class PgSqlApp(object):
                                  encrypt_password=True)
 
         #congtt: No need to disable default user to login.
-        #PgSqlAdmin(os_admin).alter_user(context, postgres, None,
-                                        'NOSUPERUSER', 'NOLOGIN')
+        #PgSqlAdmin(os_admin).alter_user(context, postgres, None, 'NOSUPERUSER', 'NOLOGIN')
 
         self.set_current_admin_user(os_admin)
 
