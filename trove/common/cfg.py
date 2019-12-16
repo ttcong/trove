@@ -232,6 +232,8 @@ common_opts = [
     cfg.StrOpt('datastore_manager', default=None,
                help='Manager class in the Guest Agent, set up by the '
                'Taskmanager on instance provision.'),
+    cfg.StrOpt('datastore_version', default='mysql-5.7',
+               help='datastore_version'),
     cfg.StrOpt('block_device_mapping', default='sdb',
                help='Block device to map onto the created instance.'),
     cfg.IntOpt('server_delete_time_out', default=60,

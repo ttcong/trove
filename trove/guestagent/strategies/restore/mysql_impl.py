@@ -32,15 +32,21 @@ import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent.strategies.restore import base
 
 LOG = logging.getLogger(__name__)
-
+CONF=cfg.CONF
 
 class MySQLRestoreMixin(object):
     """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
-    #New SET PASSWORD FOR syntax for MySQL 5.7, 8.0
-    RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
+    #congtt: Separete syntax for MySQL 5.7, 8.0 and older.
+    if (CONF.datastore_version == 'mariadb-10.1' or \
+            CONF.datastore_version == 'mysql-5.6'):
+        RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
+                                 "'root'@'localhost'=PASSWORD('');")
+    else:
+        RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
                                  "'root'@'localhost'='';")
+
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'

@@ -18,7 +18,9 @@ Intermediary class for building SQL queries for use by the guest agent.
 Do not hard-code strings into the guest agent; use this module to build
 them for you.
 """
+from trove.common import cfg
 
+CONF = cfg.CONF
 
 class Query(object):
 
@@ -379,10 +381,13 @@ class SetPassword(object):
         properties = {'user_name': self.user,
                       'user_host': self.host,
                       'new_password': self.new_password}
+        if (CONF.datastore_version == 'mariadb-10.1' or \
+            CONF.datastore_version == 'mysql-5.6'):
+            return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
+                "PASSWORD('%(new_password)s');" % properties)
         return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
                 "'%(new_password)s';" % properties)
-
-
+       
 class DropUser(object):
 
     def __init__(self, user, host='%'):
@@ -425,3 +430,4 @@ ROOT_ENABLED = ("SELECT User FROM mysql.user "
 REMOVE_ANON = "DELETE FROM mysql.user WHERE User = '';"
 REMOVE_ROOT = ("DELETE FROM mysql.user "
                "WHERE User = 'root' AND Host != 'localhost';")
+
