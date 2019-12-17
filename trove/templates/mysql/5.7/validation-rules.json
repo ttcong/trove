@@ -17,14 +17,14 @@
         {
             "name": "local_infile",
             "restart_required": false,
-            "max": 1,
+            "max": 0,
             "min": 0,
             "type": "integer"
         },
         {
             "name": "lower_case_table_names",
             "restart_required": true,
-            "max": 2,
+            "max": 1,
             "min": 0,
             "type": "integer"
         },
@@ -236,7 +236,8 @@
             "name": "long_query_time",
             "restart_required": false,
             "min": 0,
-            "type": "float"
+            "max": 31536000,
+            "type": "integer"
         },
         {
             "name": "max_prepared_stmt_count",
@@ -355,12 +356,15 @@
         {
             "name": "innodb_ft_num_word_optimize",
             "restart_required": false,
+            "max": 4294967295,
+            "min": 1,
             "type": "integer"
         },
         {
             "name": "innodb_ft_result_cache_limit",
             "restart_required": false,
             "min": 1000000,
+            "max": 4294967295,
             "type": "integer"
         },
         {
@@ -384,6 +388,7 @@
             "name": "innodb_io_capacity_max",
             "restart_required": false,
             "min": 100,
+            "max": 18446744073709500000,
             "type": "integer"
         },
         {
@@ -395,6 +400,7 @@
             "name": "innodb_lru_scan_depth",
             "restart_required": false,
             "min": 100,
+            "max": 18446744073709500000,
             "type": "integer"
         },
         {
@@ -408,6 +414,7 @@
             "name": "innodb_max_purge_lag_delay",
             "restart_required": false,
             "min": 0,
+            "max": 18446744073709500000,
             "type": "integer"
         },
         {
@@ -434,6 +441,7 @@
             "name": "innodb_online_alter_log_max_size",
             "restart_required": false,
             "min": 65536,
+            "max": 18446744073709500000,
             "type": "integer"
         },
         {
@@ -443,7 +451,7 @@
         },
         {
             "name": "innodb_page_size",
-            "restart_required": false,
+            "restart_required": true,
             "type": "string"
         },
         {
@@ -483,6 +491,8 @@
         {
             "name": "innodb_stats_persistent_sample_pages",
             "restart_required": false,
+            "max": 18446744073709500000,
+            "min": 0,
             "type": "integer"
         },
         {
@@ -494,6 +504,8 @@
         {
             "name": "innodb_stats_transient_sample_pages",
             "restart_required": false,
+            "max": 18446744073709500000,
+            "min": 0,
             "type": "integer"
         },
         {
@@ -533,6 +545,7 @@
             "name": "innodb_buffer_pool_chunk_size",
             "restart_required": true,
             "min": 1048576,
+            "max": 4294967295,
             "type": "integer"
         },
         {
@@ -578,12 +591,14 @@
             "name": "innodb_log_write_ahead_size",
             "restart_required": false,
             "min": 512,
+            "max": 16384,
             "type": "integer"
         },
         {
             "name": "innodb_max_undo_log_size",
             "restart_required": false,
             "min": 10485760,
+            "max": 18446744073709500000,
             "type": "integer"
         },
         {
