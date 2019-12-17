@@ -424,16 +424,26 @@ class PgSqlApp(object):
         """Wrapper for pg_current_wal_lsn()
         Cannot be used against a running slave
         """
-        #congtt: Update syntax for Postgre 10
-        r = self.build_admin().query("SELECT pg_current_wal_lsn()")
+        #congtt: Support syntax for PostgreSQL 10 and older.
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_current_xlog_location()"
+        else: 
+            query = "SELECT pg_current_wal_lsn()"
+        r = self.build_admin().query(query)
         return r[0][0]
 
     def pg_last_wal_replay_lsn(self):
         """Wrapper for pg_last_wal_replay_lsn()
          For use on standby servers
          """
-        #congtt: Update syntax for Postgre 10
-        r = self.build_admin().query("SELECT pg_last_wal_replay_lsn()")
+        #congtt: Support syntax for PostgreSQL 10 and older.
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_last_xlog_replay_location()"
+        else:
+            query = "SELECT pg_last_wal_replay_lsn()"
+        r = self.build_admin().query(query)
         return r[0][0]
 
     def pg_is_in_recovery(self):
@@ -519,8 +529,13 @@ class PgSqlApp(object):
 
     # congtt: Postgre 10 change pg_xlogfile_name to pg_walfile_name
     def pg_walfile_name(self, start_segment):
-        r = self.build_admin().query(
-            "SELECT pg_walfile_name('%s')" % start_segment)
+        #congtt: Support syntax for PostgreSQL 10 and older.
+        version = int(self.pg_version[1])
+        if version < 10:
+            query = "SELECT pg_xlogfile_name('%s')"
+        else:
+            query = "SELECT pg_walfile_name('%s')"
+        r = self.build_admin().query(query % start_segment)
         return r[0][0]
 
     def pg_stop_backup(self):
