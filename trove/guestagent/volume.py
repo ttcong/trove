@@ -156,7 +156,7 @@ class VolumeDevice(object):
 
         try:
             utils.poll_until(wait_for_mount, sleep_time=1, time_out=timeout)
-        except exception.PollTimeOut:
+        except:
             return False
 
         return True
