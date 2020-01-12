@@ -29,6 +29,7 @@ from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.postgresql.service import (
     PgSqlAdmin)
 from trove.guestagent.datastore.experimental.postgresql.service import PgSqlApp
+from trove.guestagent.datastore.experimental.postgresql import pgsql_query
 from trove.guestagent.datastore import manager
 from trove.guestagent import guest_log
 from trove.guestagent import volume
@@ -37,6 +38,22 @@ from trove.guestagent import volume
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
+DEFAULT_EXTENSION = [
+    'btree_gin',
+    'btree_gist',
+    'chkpass',
+    'citext',
+    'cube',
+    'dict_int',
+    'dict_xsyn',
+    'hstore',
+    'isn',
+    'lo',
+    'ltree',
+    'postgis',
+    'pg_trgm',
+    'unaccent',
+]
 
 class Manager(manager.Manager):
 
@@ -246,6 +263,15 @@ class Manager(manager.Manager):
         if not backup_info:
             self.app.secure(context)
 
+        #congtt: Trust C Language in template1.
+        #query = "UPDATE pg_language SET lanpltrusted = true WHERE lanname = 'c';"
+        #PgSqlAdmin(os_admin, 'template1').psql(query)
+
+        # congtt: Enable default extensions in template1
+        for extension in DEFAULT_EXTENSION:
+            query = pgsql_query.ExtensionQuery.create(extension)
+            PgSqlAdmin(os_admin, 'template1').psql(query)
+     
         self._admin = PgSqlAdmin(os_admin)
 
         if not cluster_config and self.is_root_enabled(context):

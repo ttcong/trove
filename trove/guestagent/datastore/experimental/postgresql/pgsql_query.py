@@ -162,10 +162,12 @@ class AccessQuery(object):
     def grant(cls, user, database):
         """Query to grant user access to a database."""
 
-        return "GRANT ALL ON DATABASE \"{database}\" TO \"{user}\"".format(
+        # congtt: Master User usage: grant access means change owner to 
+        return "ALTER DATABASE \"{database}\" OWNER TO \"{user}\"".format(
             database=database,
             user=user,
         )
+
 
     @classmethod
     def revoke(cls, user, database):
@@ -174,4 +176,22 @@ class AccessQuery(object):
         return "REVOKE ALL ON DATABASE \"{database}\" FROM \"{user}\"".format(
             database=database,
             user=user,
+        )
+
+class ExtensionQuery(object):
+    
+    @classmethod
+    def create(cls, extension):
+        """Query to create extension"""
+
+        return "CREATE EXTENSION \"{extension}\"".format(
+            extension=extension
+        )
+
+    @classmethod
+    def revoke(cls, extension):
+        """Query to drop extension."""
+
+        return "DROP EXTENSION \"{extension}\"".format(
+            extension=extension
         )
