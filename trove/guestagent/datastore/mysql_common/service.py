@@ -50,7 +50,6 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 ADMIN_USER_NAME = "os_admin"
-#CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@localhost:3306/mysql?unix_socket=/var/run/mysqld/mysqld.sock"
 CONNECTION_STR_FORMAT = "mysql+pymysql://%s:%s@127.0.0.1:3306"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
@@ -92,7 +91,7 @@ def clear_expired_password():
     """
     LOG.debug("Removing expired password.")
     secret_file = "/root/.mysql_secret"
-    if (not operating_system.exists(secret_file,is_directory=False,as_root=True)):
+    if (not operating_system.exists(secret_file, is_directory=False, as_root=True)):
         LOG.exception("/root/.mysql_secret does not exist.")
         return
 
@@ -641,7 +640,7 @@ class BaseMySqlApp(object):
         if ENGINE:
             return ENGINE
 
-        pwd = self.get_auth_password()
+        pwd = self.get_auth_password()        
         LOG.debug(pwd)
         ENGINE = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
@@ -750,28 +749,26 @@ class BaseMySqlApp(object):
             CONNECTION_STR_FORMAT % ('root', ''), echo=True)
         with self.local_sql_client(engine, use_flush=False) as client:
             self._create_admin_user(client, admin_password)
-
-        # Enable skip-name-resolve
-        operating_system.move("/etc/mysql/conf.d/01-vdbaas-additional-config.cnf_bk",
-                              "/etc/mysql/conf.d/01-vdbaas-additional-config.cnf",
-                              as_root=True)
-
-        operating_system.chown("/etc/mysql/conf.d/01-vdbaas-additional-config.cnf",
-                               "mysql",
-                               "mysql",
-                               as_root=True)
-
-        LOG.debug("Switching to the '%s' user now.", ADMIN_USER_NAME)
-        engine = sqlalchemy.create_engine(
-            CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
-                                     urllib.parse.quote(admin_password)),
-            echo=True)
-        with self.local_sql_client(engine) as client:
             self._remove_anonymous_user(client)
+
+        # LOG.debug("Switching to the '%s' user now.", ADMIN_USER_NAME)
+        # engine = sqlalchemy.create_engine(
+        #     CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
+        #                              urllib.parse.quote(admin_password)),
+        #     echo=True)
+        # with self.local_sql_client(engine) as client:
+        #     self._remove_anonymous_user(client)
+
+        # congtt: Add custom cnf
+        ADDIN_CNF = CNF_INCLUDE_DIR + "01-dbaas-custom.cnf"
+        if (operating_system.exists(ADDIN_CNF + "_bk", is_directory=False, as_root=True)):
+            operating_system.move(ADDIN_CNF + "_bk", ADDIN_CNF, as_root=True)
+            operating_system.chown(ADDIN_CNF, "mysql", "mysql", as_root=True)
 
         self.stop_db()
         self._reset_configuration(config_contents, admin_password)
         self.start_mysql()
+       
         LOG.debug("MySQL secure complete.")
 
     def _reset_configuration(self, configuration, admin_password=None):
