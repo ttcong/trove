@@ -44,7 +44,6 @@ CONF = cfg.CONF
 BACKUP_CFG_OVERRIDE = 'PgBaseBackupConfig'
 DEBUG_MODE_OVERRIDE = 'DebugLevelOverride'
 
-
 class PgSqlApp(object):
 
     OS = operating_system.get_os()
@@ -620,9 +619,9 @@ class PgSqlAdmin(object):
         'BYPASSRLS', 'LOGIN'
     )
 
-    def __init__(self, user):
+    def __init__(self, user, database=None):
         port = cfg.get_configuration_property('postgresql_port')
-        self.__connection = PostgresLocalhostConnection(user.name, port=port)
+        self.__connection = PostgresLocalhostConnection(user.name, port=port, database=database)
 
     def grant_access(self, context, username, hostname, databases):
         """Give a user permission to use a given database.
@@ -1070,7 +1069,9 @@ class PostgresLocalhostConnection(PostgresConnection):
 
     HOST = 'localhost'
 
-    def __init__(self, user, password=None, port=5432):
+    def __init__(self, user, password=None, port=5432, database=None):
+        if (database is None):
+            database = user
         super(PostgresLocalhostConnection, self).__init__(
             user=user, password=password,
-            host=self.HOST, port=port)
+            host=self.HOST, port=port,database=database)
