@@ -59,7 +59,23 @@ class RedisAppStatus(service.BaseDbStatus):
             if self.__client.ping():
                 return rd_instance.ServiceStatuses.RUNNING
         except ConnectionError:
-            return rd_instance.ServiceStatuses.SHUTDOWN
+            # congtt: If failed to ping by python-redis,
+            # check again with redis-cli.
+            # Oddly, Trove will clean configured params after resized ?
+            try:
+                out, err = utils.execute_with_timeout("redis-cli", "ping",
+                    run_as_root=True,
+                    root_helper="sudo",
+                    check_exit_code=[0, 1])
+                if out.strip() == "PONG":
+                    LOG.info("Redis-Server is up. Just fail to ping by python-redis")
+                    return rd_instance.ServiceStatuses.RUNNING
+                else:
+                    LOG.info(err)
+                    return rd_instance.ServiceStatuses.SHUTDOWN
+            except exception.ProcessExecutionError:
+                LOG.info("Redis-Server is down.")
+                return rd_instance.ServiceStatuses.SHUTDOWN
         except BusyLoadingError:
             return rd_instance.ServiceStatuses.BLOCKED
         except Exception:
