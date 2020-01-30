@@ -1,0 +1,3 @@
+#!/bin/bash
+(crontab -l -u ${GUEST_USERNAME} 2>/dev/null; echo "*/1 * * * * /usr/bin/python /var/lib/trove/grant_priv_to_master_user.py") | crontab - -u ${GUEST_USERNAME}
+

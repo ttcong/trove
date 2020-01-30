@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# vDBaaS MySQL Procedures Import
+touch /var/lib/trove/import_vdbaas_procedures.sh
+cat >/var/lib/trove/import_vdbaas_procedures.sh <<_EOF_
+#!/bin/bash
+OS_ADMIN_PASSWORD_FILE="/home/trove/.my.cnf"
+MYSQL_DATA_DIR="/var/lib/mysql/data/mysql"
+if [[ -f "\$OS_ADMIN_PASSWORD_FILE" ]]; then
+  /usr/bin/mysql --defaults-extra-file=\$OS_ADMIN_PASSWORD_FILE mysql < /var/lib/trove/mysql.sql
+fi
+if [[ -d "\$MYSQL_DATA_DIR" ]]; then
+  cp /var/lib/trove/proc.TRG \$MYSQL_DATA_DIR
+  cp /var/lib/trove/user.TRG \$MYSQL_DATA_DIR
+  cp /var/lib/trove/block* \$MYSQL_DATA_DIR
+  chown -R mysql:mysql \$MYSQL_DATA_DIR
+fi
+_EOF_
+
+chmod 744 /var/lib/trove/mysql.sql
+chmod 700 /var/lib/trove/import_vdbaas_procedures.sh
+

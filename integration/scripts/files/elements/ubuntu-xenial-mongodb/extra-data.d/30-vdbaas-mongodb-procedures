@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+set -o xtrace
+
+# CONTEXT: 
+# PURPOSE: copy vdbaas procedures
+
+source $_LIB/die
+
+
+[ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+
+cp -rf ${TROVESTACK_SCRIPTS}/files/elements/ubuntu-xenial-mongodb/extra-data.d/extra-data.d ${TMP_HOOKS_PATH}

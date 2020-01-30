@@ -1,0 +1,6 @@
+# insert_username extension
+comment = 'functions for tracking who changed a table'
+default_version = '1.0'
+module_pathname = '$libdir/insert_username'
+relocatable = true
+superuser = false

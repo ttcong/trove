@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+cat > "/etc/sysctl.d/10-postgresql-performance.conf" << _EOF_
+# See 'http://www.postgresql.org/docs/9.6/static/kernel-resources.html'
+# for best practices.
+# It is recommended to disable memory overcommit,
+# but the Python interpreter may require it on smaller flavors.
+# We therefore stick with the heuristic overcommit setting.
+vm.overcommit_memory=0
+
+_EOF_
+
+cat > "/etc/rc.local" << _EOF_
+#!/bin/bash
+
+# See 'http://www.postgresql.org/docs/9.6/static/kernel-resources.html'
+# Postgres 9.6 added support for THP. Using huge pages reduces overhead when
+# using large contiguous chunks of memory, like PostgreSQL does.
+if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+  echo never > /sys/kernel/mm/transparent_hugepage/defrag
+fi
+
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+  echo always > /sys/kernel/mm/transparent_hugepage/enabled
+fi
+exit 0
+
+_EOF_
+
+apt-get update
+apt-get --allow-unauthenticated -y install postgresql-$PG_VERSION \
+postgresql-client-$PG_VERSION
+
+sed -i "s/external_pid_file =.*/external_pid_file = '\/var\/run\/postgresql\/postgresql.pid'/" /etc/postgresql/$PG_VERSION/main/postgresql.conf
+
+# The script will create a postgresql-9.6 image for user to use.
+# From Postgresql >9.4, pg_rewind is in the main source tree. But, the default location is
+# /usr/lib/postgresql/<version>/bin/pg_rewind. So, there need create a symlink from that
+# location to /usr/bin
+ln -s /usr/lib/postgresql/$PG_VERSION/bin/pg_rewind /usr/bin/pg_rewind
+
+# Install the native Python client.
+apt-get --allow-unauthenticated -y install libpq-dev \
+postgresql-server-dev-$PG_VERSION \
+python-dev
+pip install psycopg2
+
+# Install Postgresql extensions:
+# postgis, pgrouting
+apt-get --allow-unauthenticated -y install postgis 
+apt-get --allow-unauthenticated -y install postgresql-$PG_VERSION-postgis-2.5 
+apt-get --allow-unauthenticated -y install postgresql-$PG_VERSION-pgrouting
+
+# Copy vdbaas procedure to /var/lib/trove
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+# Copy customised *.control to vDB
+echo "Copy vdb customised *.control to /usr/share/postgresql/$PG_VERSION/extension"
+cp ${TMP_HOOKS_DIR}/extra-data.d/extension/* /usr/share/postgresql/$PG_VERSION/extension

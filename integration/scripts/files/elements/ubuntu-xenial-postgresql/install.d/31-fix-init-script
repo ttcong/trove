@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+if [[ -e /lib/systemd/system/postgresql.service ]]; then
+  rm -f /lib/systemd/system/postgresql.service
+fi
+
+sed -i "s/PIDFile=\/run\/postgresql\/%i.pid/PIDFile=\/var\/run\/postgresql\/postgresql.pid/" /lib/systemd/system/postgresql@.service
+
+systemctl disable postgresql
+systemctl daemon-reload
+systemctl enable postgresql

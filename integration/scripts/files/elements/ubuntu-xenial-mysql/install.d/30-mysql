@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+#set -e
+#set -o xtrace
+export DEBIAN_FRONTEND=noninteractive
+
+# Xenial provides mysql 5.7 which requires percona-xtrabackup-24
+# MySQL 8.0 requires percona-xtrabackup-80
+
+if [[ $DATASTORE_VERSION == "mysql-8.0" ]]; then
+ curl -OL "https://dev.mysql.com/get/mysql-apt-config_0.8.13-1_all.deb"
+ echo mysql-apt-config mysql-apt-config/select-server select mysql-8.0 | debconf-set-selections
+ dpkg -i mysql-apt-config_0.8.13-1_all.deb
+ PXB_VERSION_OVERRIDE=80 
+else
+ PXB_VERSION_OVERRIDE=24
+fi
+
+#DEBIAN_FRONTEND=noninteractive 
+apt-get update -y
+#apt-cache policy mysql-server
+#DEBIAN_FRONTEND=noninteractive 
+apt-get -qy install mysql-server mysql-client
+
+pip install --upgrade SQLAlchemy
+pip install --upgrade PyMySQL
+
+PKGS=$(apt-cache search percona-xtrabackup-${PXB_VERSION_OVERRIDE})
+if [[ "$PKGS" == *"percona-xtrabackup-$PXB_VERSION_OVERRIDE"* ]]; then
+    apt-get --allow-unauthenticated -y install percona-xtrabackup-${PXB_VERSION_OVERRIDE}
+else
+    # Architecture is not supported by percona website.  Compile and install it
+    PXB_VERSION=${PXB_VERSION_OVERRIDE:0:1}.${PXB_VERSION_OVERRIDE:1:1}
+
+    apt-get --allow-unauthenticated -y install build-essential flex bison automake autoconf \
+       libtool cmake libaio-dev mysql-client libncurses-dev zlib1g-dev \
+       libgcrypt11-dev libev-dev libcurl4-gnutls-dev vim-common
+
+    pushd /tmp
+
+    git clone https://github.com/percona/percona-xtrabackup.git
+    cd percona-xtrabackup
+    git checkout $PXB_VERSION
+
+    mkdir /tmp/boost
+    cmake -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/tmp/boost -DBUILD_CONFIG=xtrabackup_release -DWITH_MAN_PAGES=OFF && make -j4
+    make install
+    ln -s /usr/local/xtrabackup/bin/* /usr/bin/
+
+    dpkg -P build-essential automake autoconf libtool cmake
+    apt-get -y clean
+
+    popd
+
+    rm -rf /tmp/boost /tmp/percona-xtrabackup
+fi
+
+# Copy vdbaas procedure to /var/lib/trove
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+echo "Copy vdbaas procedures to /var/lib/trove"
+cp -f ${TMP_HOOKS_DIR}/extra-data.d/mysql-extra-data.d/* /var/lib/trove

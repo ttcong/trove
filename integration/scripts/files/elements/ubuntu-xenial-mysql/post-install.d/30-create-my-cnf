@@ -1,0 +1,65 @@
+#!/bin/bash
+
+#Enable bin_log & relay_log by default. No conflict with trove-replica.
+touch /etc/mysql/conf.d/01-dbaas-custom.cnf_bk
+cat >/etc/mysql/conf.d/01-dbaas-custom.cnf_bk <<_EOF_
+[mysqld]
+relay_log = mysql-relay-bin.log
+log_bin = mysql-bin.log
+log_error=/var/log/mysqld.log
+local_infile=OFF
+skip-name-resolve
+skip-host-cache
+_EOF_
+
+cat >/etc/mysql/conf.d/perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = on
+#For MySQL 5.7 only
+#show_compatibility_56 = on
+_EOF_
+
+cat >/etc/mysql/my.cnf <<_EOF_
+[mysqld]
+user = mysql
+port = 3306
+server_id = 11234
+basedir = /usr
+datadir = /var/lib/mysql
+innodb_data_file_path = ibdata1:10M:autoextend
+innodb_file_per_table = 1
+innodb_log_files_in_group = 2
+innodb_log_file_size=50M
+innodb_log_buffer_size=25M
+!includedir /etc/mysql/conf.d
+_EOF_
+
+chown -R mysql:mysql /etc/mysql
+chown -R mysql:mysql /var/lib/mysql
+chown -R mysql:mysql /var/tmp
+chown -R mysql:mysql /tmp
+
+rm -rf /etc/mysql/mysql.conf.d/
+
+# Path for LOAD DATA INFILE. Remove Execute 
+if [ -d /var/lib/mysql-files ]; then
+    chmod -R -x /var/lib/mysql-files
+fi 
+
+if [ -e /etc/init/mysql.conf ]; then
+    rm -f /etc/init/mysql.conf
+fi
+
+if [ -e /etc/init.d/mysql ]; then
+    rm -f /etc/init.d/mysql
+fi
+
+if [ -e /var/lib/mysql/auto.cnf ]; then
+    rm -f /var/lib/mysql/auto.cnf
+fi
+
+echo "ExecStartPost=/var/lib/trove/import_vdbaas_procedures.sh" >> /lib/systemd/system/mysql.service
+
+systemctl daemon-reload
+systemctl enable mysql
+systemctl start mysql

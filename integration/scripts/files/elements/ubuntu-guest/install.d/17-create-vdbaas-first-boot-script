@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+cp $TMP_HOOKS_DIR/extra-data.d/vdbaas_init_scripts.sh /var/lib/trove
+chmod +x /var/lib/trove/vdbaas_init_scripts.sh
+chown trove:trove /var/lib/trove/vdbaas_init_scripts.sh
+

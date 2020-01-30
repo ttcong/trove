@@ -1,0 +1,5 @@
+# address standardizer us dataset
+comment = 'Address Standardizer US dataset example'
+default_version = '2.5.3'
+relocatable = true
+superuser = false

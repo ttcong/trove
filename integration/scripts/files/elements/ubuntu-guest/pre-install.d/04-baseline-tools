@@ -1,0 +1,9 @@
+#!/bin/bash
+# Install baseline packages and tools.
+
+set -e
+set -o xtrace
+
+apt-get --allow-unauthenticated install -y \
+language-pack-en \
+python-software-properties

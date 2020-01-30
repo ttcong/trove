@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install trove guest python dependencies - see trovestack functions_qemu
+set -e
+set -o xtrace
+
+TMP_HOOKS_DIR="/tmp/in_target.d"
+#DEST_DIR="/usr/local/lib/python2.7/dist-packages/monasca_agent"
+DEST_DIR="/var/lib/trove"
+
+cp -r ${TMP_HOOKS_DIR}/monasca-agent ${DEST_DIR}
+
+cd ${DEST_DIR}/monasca-agent
+pip install -r requirements.txt
+python setup.py install 
+
+cd -
+

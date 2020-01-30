@@ -1,0 +1,147 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+rm -rf /etc/init/trove-guestagent.conf
+rm -rf /etc/trove/trove-guestagent.conf
+
+# Config
+mkdir -p /etc/trove/conf.d
+touch /etc/trove/conf.d/trove-guestagent.conf
+cat >/etc/trove/conf.d/trove-guestagent.conf <<EOF
+[DEFAULT]
+debug = True
+nova_proxy_admin_user = 
+nova_proxy_admin_pass = 
+nova_proxy_admin_tenant_name = 
+log_file = /var/log/trove-guestagent.log
+datastore_manager = ${SERVICE_TYPE}
+datastore_version = ${DATASTORE_VERSION}
+transport_url = 
+trove_auth_url = 
+command_process_timeout = 300
+master_user_grant_option = True
+#For MySQL/MariaDB
+master_user_grant = ALTER ROUTINE, ALTER, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE USER, CREATE VIEW, CREATE, DELETE, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, PROCESS, REFERENCES, RELOAD, REPLICATION CLIENT, REPLICATION SLAVE, SELECT, SHOW DATABASES, SHOW VIEW, TRIGGER, UPDATE
+#For MongoDB
+#master_user_grant = readWriteAnyDatabase, dbAdminAnyDatabase, clusterMonitor, userAdminAnyDatabase
+#For PostgreSQL 10
+#master_user_grant = Createrole, CreateDB, Replication
+# ========== Configuration options for Swift ============
+
+# The swift_url can be specified directly or fetched from Keystone catalog.
+
+# To fetch from Keystone, comment out swift_url, and uncomment the others.
+# swift_url = http://10.0.0.1:8080/v1/AUTH_
+# Region name of this node. Default value is None.
+os_region_name = RegionOne
+# Service type to use when searching catalog.
+swift_service_type = object-store
+
+# ========== Default Storage Options for backup ==========
+
+# Default configuration for storage strategy and storage options
+# for backups
+
+# For storage to Swift, use the following as defaults:
+storage_strategy = SwiftStorage
+storage_namespace = trove.common.strategies.storage.swift
+
+# Default config options for storing backups to swift
+backup_swift_container = database_backups
+backup_use_gzip_compression = True
+backup_use_openssl_encryption = True
+backup_aes_cbc_key = "default_aes_cbc_key"
+backup_use_snet = False
+backup_chunk_size = 65536
+backup_segment_max_size = 2147483648
+
+[mysql]
+
+# For mysql, the following are the defaults for backup, and restore:
+backup_strategy = InnoBackupEx
+backup_namespace = trove.guestagent.strategies.backup.mysql_impl
+restore_namespace = trove.guestagent.strategies.restore.mysql_impl
+
+# Default configuration for mysql replication
+replication_strategy = MysqlBinlogReplication
+replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
+#replication_user = slave_user
+#replication_password = slave_password
+
+# Users to ignore for user create/list/delete operations
+ignore_users = os_admin, root
+
+# Databases to ignore for db create/list/delete operations
+ignore_dbs = sys, mysql, information_schema, performance_schema
+
+[redis]
+# For redis, the following are the defaults for backup, and restore:
+backup_strategy = RedisBackup
+backup_namespace = trove.guestagent.strategies.backup.experimental.redis_impl
+restore_namespace = trove.guestagent.strategies.restore.experimental.redis_impl
+volume_support = True
+device_path = /dev/sdb
+
+[mongodb]
+# For redis, the following are the defaults for backup, and restore:
+backup_strategy = MongoDump
+backup_namespace = trove.guestagent.strategies.backup.experimental.mongo_impl
+restore_namespace = trove.guestagent.strategies.restore.experimental.mongo_impl
+volume_support = True
+device_path = /dev/sdb
+
+[postgresql]
+backup_strategy = PgBaseBackup
+backup_namespace = trove.guestagent.strategies.backup.experimental.postgresql_impl
+restore_namespace = trove.guestagent.strategies.restore.experimental.postgresql_impl
+volume_support = True
+device_path = /dev/sdb
+
+EOF
+
+cat >/lib/systemd/system/trove-guestagent.service <<EOF
+[Unit]
+Description=OpenStack Trove Guest
+After=syslog.target network.target
+After=multi-user.target
+#Wants=cloud-final.service
+After=cloud-final.service
+
+[Service]
+Type=simple
+User=${GUEST_USERNAME}
+ExecStart=/usr/bin/trove-guestagent --config-dir=/etc/trove/conf.d --log-dir=/var/log/trove --logfile=trove-guestagent.log
+Restart=on-failure
+
+[Install]
+WantedBy=cloud-init.target
+EOF
+
+# bin
+chown ${GUEST_USERNAME}:${GUEST_USERNAME} /usr/bin/trove-guestagent
+
+# Run
+mkdir -p /var/run/trove
+chown ${GUEST_USERNAME}:${GUEST_USERNAME} /var/run/trove/
+
+# Lock
+mkdir -p /var/lock/trove
+chown ${GUEST_USERNAME}:${GUEST_USERNAME} /var/lock/trove/
+
+# Log
+mkdir -p /var/log/trove
+chown -R ${GUEST_USERNAME}:${GUEST_USERNAME} /var/log/trove
+
+# Config
+chmod 0755 /etc/trove
+chown -R ${GUEST_USERNAME}:${GUEST_USERNAME} /etc/trove
+
+# Extra-data
+chown -R ${GUEST_USERNAME}:${GUEST_USERNAME} /var/lib/trove
+
+# Enable and start service
+systemctl daemon-reload
+systemctl enable trove-guestagent.service
+systemctl start trove-guestagent.service

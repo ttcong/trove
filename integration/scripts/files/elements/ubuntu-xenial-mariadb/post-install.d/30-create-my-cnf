@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Security. Restrict for MySQL Local-loadfile
+mkdir -p /var/lib/mysql-files
+chown mysql:mysql /var/lib/mysql-files
+chmod 0600 /var/lib/mysql-files
+
+#Enable bin_log & relay_log by default. No conflict with trove-replica.
+touch /etc/mysql/conf.d/01-dbaas-custom.cnf_bk
+cat >/etc/mysql/conf.d/01-dbaas-custom_bk <<_EOF_
+[mysqld]
+relay_log = mysql-relay-bin.log
+log_bin = mysql-bin.log
+local_infile=off
+secure_file_priv=/var/lib/mysql-files
+log_error = /var/log/mysqld.log
+skip-name-resolve
+skip-host-cache
+_EOF_
+
+cat >/etc/mysql/conf.d/perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = on
+_EOF_
+
+if [[ -f "/etc/mysql/my.cnf.fallback" ]]; then
+  rm /etc/mysql/my.cnf.fallback
+fi
+
+cat >/etc/mysql/my.cnf <<_EOF_
+[mysqld]
+user = mysql
+port = 3306
+server_id = 11234
+basedir = /usr
+datadir = /var/lib/mysql
+innodb_data_file_path = ibdata1:10M:autoextend
+innodb_file_per_table = 1
+innodb_log_files_in_group = 2
+innodb_log_file_size=50M
+innodb_log_buffer_size=25M
+!includedir /etc/mysql/conf.d
+_EOF_
+
+chown -R mysql:mysql /etc/mysql
+chown -R mysql:mysql /var/lib/mysql
+chown -R mysql:mysql /var/tmp
+chown -R mysql:mysql /tmp
+
+rm -rf /etc/mysql/mysql.conf.d
+
+if [ -e /etc/init/mysql.conf ]; then
+    rm -f /etc/init/mysql.conf
+fi
+
+if [ -e /var/lib/mysql/auto.cnf ]; then
+    rm -f /var/lib/mysql/auto.cnf
+fi
+
+if [ -e /lib/systemd/system/mysql.service ]; then
+    rm -f /lib/systemd/system/mysql.service
+fi
+
+cat >/etc/systemd/system/mariadb.service.d/import_vdbaas_procedures.conf <<_EOF_
+[Service]
+ExecStartPost=/var/lib/trove/import_vdbaas_procedures.sh
+_EOF_
+
+cat >/etc/systemd/system/mariadb.service.d/no_protect_home.conf <<_EOF_
+[Service]
+ProtectHome=false
+_EOF_
+
+systemctl daemon-reload
+systemctl disable mysql
+systemctl enable mariadb.service
+systemctl start mariadb.service

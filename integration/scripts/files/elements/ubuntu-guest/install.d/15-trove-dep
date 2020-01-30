@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install trove guest python dependencies - see trovestack functions_qemu
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y install trove-guestagent
+apt-get -y install qemu-guest-agent
+
+# pick up the requirements file left for us by
+# extra-data.d/15-reddwarf-dep
+
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+echo "Update trove-guestagent source code"
+cp -R ${TMP_HOOKS_DIR}/trove /usr/lib/python2.7/dist-packages
+
+#UPPER_CONSTRAINTS=""
+#if [ -f ${TMP_HOOKS_DIR}/upper-constraints.txt ]; then
+#    UPPER_CONSTRAINS=" -c ${TMP_HOOKS_DIR}/upper-constraints.txt"
+#fi
+
+#pip install -q --upgrade -r ${TMP_HOOKS_DIR}/requirements.txt ${UPPER_CONSTRAINTS}
+

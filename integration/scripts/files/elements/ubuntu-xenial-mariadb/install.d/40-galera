@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# This workaround is needed to make sure the mariadb@bootstrap.service
+# continues to work in MariaDB 10.1.
+# Note:(goldyfruit) https://bugs.launchpad.net/trove/+bug/1747475
+#
+
+set -ex
+
+# Create MariaDB Bootstrap systemd unit file
+SYSTEMD_MARIADB_BOOTSTRAP_UNIT_PATH=/etc/systemd/system/mariadb@bootstrap.service
+cat << EOF > $SYSTEMD_MARIADB_BOOTSTRAP_UNIT_PATH
+#
+# /etc/systemd/system/mariadb@bootstrap.service
+#
+
+[Unit]
+Description=MariaDB Galera bootstrap
+Documentation=https://mariadb.com/kb/en/library/getting-started-with-mariadb-galera-cluster/#bootstrapping-a-new-cluster
+After=network.target syslog.target
+ConditionPathExists=/usr/bin/galera_new_cluster
+
+[Service]
+Type=oneshot
+Restart=no
+ExecStart=/usr/bin/galera_new_cluster
+
+[Install]
+WantedBy=multi-user.target
+Alias=mysql@bootstrap.service mysqld@bootstrap.service
+EOF
+
+# Print message during the DIB process
+echo "mariadb@bootstrap.service configured for systemd"
+
+# Remove unwanted warning deprecated service
+rm -rf /lib/systemd/system/mariadb@bootstrap.service.d

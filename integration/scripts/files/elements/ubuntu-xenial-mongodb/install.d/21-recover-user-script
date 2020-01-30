@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Copy vdbaas procedure to /var/lib/trove
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+echo "Copy vdbaas procedures to /var/lib/trove"
+cp -rf ${TMP_HOOKS_DIR}/extra-data.d/* /var/lib/trove

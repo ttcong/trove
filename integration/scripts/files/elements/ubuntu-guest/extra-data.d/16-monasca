@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+# CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+# PURPOSE: Setup the requirements file for use by 15-reddwarf-dep
+
+source $_LIB/die
+
+[ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+[ -n "$MONASCA_AGENT" ] || die "Monasca agent path not set"
+
+sudo cp -r ${MONASCA_AGENT} ${TMP_HOOKS_PATH}

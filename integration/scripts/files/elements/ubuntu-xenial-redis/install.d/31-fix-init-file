@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+REDIS_CONF_NAME=redis.conf
+REDIS_CONF_DIR=/etc/redis
+REDIS_CONF=$REDIS_CONF_DIR/$REDIS_CONF_NAME
+REDIS_DATA_DIR=/var/lib/redis
+REDIS_LOG_DIR=/var/log/redis
+REDIS_LOG=$REDIS_LOG_DIR/redis.log
+REDIS_RUN_DIR=/var/run/redis
+REDIS_PID=$REDIS_RUN_DIR/redis-server.pid
+
+cat > "/lib/systemd/system/redis-server.service" << _EOF_
+[Unit]
+Description=Redis In-Memory Data Store
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=$REDIS_PID
+User=redis
+Group=redis
+
+Environment=statedir=$REDIS_RUN_DIR
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p \${statedir}
+ExecStartPre=/bin/chown -R redis:redis \${statedir}
+ExecStart=/usr/local/bin/redis-server $REDIS_CONF
+ExecReload=/bin/kill -USR2 \$MAINPID
+ExecStop=/usr/local/bin/redis-cli shutdown
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+_EOF_
+
+systemctl daemon-reload
+systemctl enable redis-server.service
+systemctl start redis-server.service

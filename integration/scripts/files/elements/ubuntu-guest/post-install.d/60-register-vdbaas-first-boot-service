@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+touch /lib/systemd/system/vdbaas-init.service
+cat >/lib/systemd/system/vdbaas-init.service <<EOF
+[Unit]
+Description=Execute vDBaaS First-Boot scripts
+After=syslog.target network.target
+After=multi-user.target
+After=cloud-final.service
+
+[Service]
+Type=simple
+ExecStart=/var/lib/trove/vdbaas_init_scripts.sh
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=cloud-init.target
+
+EOF
+systemctl daemon-reload
+systemctl enable vdbaas-init.service
+systemctl start vdbaas-init.service

@@ -1,0 +1,4 @@
+#!/bin/bash
+touch /var/log/mysqld.log
+chown mysql:mysql /var/log/mysqld.log
+chmod 0644 /var/log/mysqld.log

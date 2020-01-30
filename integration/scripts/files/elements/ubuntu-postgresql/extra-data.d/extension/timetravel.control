@@ -1,0 +1,6 @@
+# timetravel extension
+comment = 'functions for implementing time travel'
+default_version = '1.0'
+module_pathname = '$libdir/timetravel'
+relocatable = true
+superuser = false
