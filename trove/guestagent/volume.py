@@ -19,7 +19,7 @@ from tempfile import NamedTemporaryFile
 import traceback
 
 from oslo_log import log as logging
-from oslo_service import loopingcall
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -157,8 +157,13 @@ class VolumeDevice(object):
         try:
             utils.poll_until(wait_for_mount, sleep_time=1, time_out=timeout)
         except exception.PollTimeOut:
+            LOG.debug("PollTimeOut exception")
             return False
-        except loopingcall.LoopingCallTimeout:
+        # Workaround:
+        # congtt: Unexpected exception. Sometimes it fails to catch PollTimeOut.
+        # We can go ahead because this is just a sleep-wait function.
+        except:
+            LOG.debug("Unexpected exception")
             return False
 
         return True
