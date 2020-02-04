@@ -30,23 +30,8 @@
             "type": "integer"
         },
         {
-            "name": "save",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
             "name": "stop-writes-on-bgsave-error",
             "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "rdbcompression",
-            "restart_required": false,
-            "type": "boolean"
-        },
-        {
-            "name": "rdbchecksum",
-            "restart_required": true,
             "type": "boolean"
         },
         {
@@ -299,6 +284,23 @@
             "name": "aof-rewrite-incremental-fsync",
             "restart_required": false,
             "type": "boolean"
+        },
+        {
+            "name": "activedefrag",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "lfu-decay-time",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "lfu-log-factor",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
         }
     ]
 }
