@@ -6,4 +6,5 @@ set -o xtrace
 
 apt-get --allow-unauthenticated install -y \
 language-pack-en \
-python-software-properties
+python-software-properties \
+gnupg2
