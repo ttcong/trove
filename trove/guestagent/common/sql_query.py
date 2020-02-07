@@ -160,14 +160,6 @@ class Grant(object):
         return self.user or ""
 
     @property
-    def _identity(self):
-        if self.clear:
-            return "IDENTIFIED BY '%s'" % self.clear
-        if self.hashed:
-            return "IDENTIFIED BY PASSWORD '%s'" % self.hashed
-        return ""
-
-    @property
     def _host(self):
         return self.host or "%"
 
@@ -189,7 +181,6 @@ class Grant(object):
     def _whom(self):
         # User and host to be granted permission. Optionally, password, too.
         whom = [("TO %s" % self._user_host),
-                self._identity,
                 ]
         whom = [w for w in whom if w]
         return " ".join(whom)
