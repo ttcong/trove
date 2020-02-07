@@ -91,22 +91,32 @@ def clear_expired_password():
     """
     LOG.debug("Removing expired password.")
     secret_file = "/root/.mysql_secret"
-    if (not operating_system.exists(secret_file, is_directory=False, as_root=True)):
-        LOG.exception("/root/.mysql_secret does not exist.")
-        return
+    try:
+        out, err = utils.execute("cat", secret_file,
+                                 run_as_root=True, root_helper="sudo")
+    except exception.ProcessExecutionError:
+        LOG.warning("/root/.mysql_secret does not exist.")
+    else:
+        m = re.match('# The random password set for the root user at .*: (.*)',
+                     out)
+        if m:
+            try:
+                out, err = utils.execute("mysqladmin", "-p%s" % m.group(1),
+                                         "password", "", run_as_root=True,
+                                         root_helper="sudo")
+            except exception.ProcessExecutionError:
+                LOG.exception("Cannot change mysql password.")
+                return
+            operating_system.remove(secret_file, force=True, as_root=True)
+            LOG.debug("Expired password removed.")
 
-    m = re.match('# The random password set for the root user at .*: (.*)',
-                 out)
-    if m:
-        try:
-            out, err = utils.execute("mysqladmin", "-p%s" % m.group(1),
-                                     "password", "", run_as_root=True,
-                                     root_helper="sudo")
-        except exception.ProcessExecutionError:
-            LOG.exception("Cannot change mysql password.")
-            return
-        operating_system.remove(secret_file, force=True, as_root=True)
-        LOG.debug("Expired password removed.")
+    # The root user password will be changed in app.secure_root() later on
+    LOG.debug('Initializae the root password to empty')
+    try:
+        utils.execute("mysqladmin", "--user=root", "password", "",
+                      run_as_root=True, root_helper="sudo")
+    except Exception:
+        LOG.exception("Failed to initializae the root password")
 
 
 def load_mysqld_options():
@@ -257,7 +267,7 @@ class BaseMySqlAdmin(object):
                 uu = sql_query.SetPassword(user.name, host=user.host,
                                            new_password=user.password)
                 t = text(str(uu))
-                client.execute(t)
+                client.execute(t, **uu.keyArgs)
 
     def update_attributes(self, username, hostname, user_attrs):
         """Change the attributes of an existing user."""
@@ -277,7 +287,7 @@ class BaseMySqlAdmin(object):
                                                new_password=new_password)
 
                     t = text(str(uu))
-                    client.execute(t)
+                    client.execute(t, **uu.keyArgs)
 
                 if new_name or new_host:
                     uu = sql_query.RenameUser(user.name, host=user.host,
@@ -329,7 +339,7 @@ class BaseMySqlAdmin(object):
                 user.check_create()
 
                 #Create user
-                cu = sql_query.CreateUser(user.name, host=user.host,
+                cu = sql_query.CreateUser(user=user.name, host=user.host,
                                           clear=user.password)
                 t = text(str(cu))
                 client.execute(t, **cu.keyArgs)
@@ -597,7 +607,8 @@ class BaseKeepAliveConnection(interfaces.PoolListener):
         # way than MySQL and PXC, which manifests itself as
         # an invalid packet sequence.  Handle it as well.
         except pymysql_err.InternalError as ex:
-            if "Packet sequence number wrong" in ex.message:
+            code, msg = ex.args
+            if "Packet sequence number wrong" in msg:
                 raise exc.DisconnectionError()
             else:
                 raise
@@ -695,7 +706,7 @@ class BaseMySqlApp(object):
             uu = sql_query.SetPassword(ADMIN_USER_NAME, host=host,
                                        new_password=password)
             t = text(str(uu))
-            client.execute(t)
+            client.execute(t, **uu.keyArgs)
 
         g = sql_query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
                             host=host, grant_option=True)
@@ -715,7 +726,7 @@ class BaseMySqlApp(object):
             models.MySQLUser.root_username, host=localhost,
             new_password=new_password)
         t = text(str(uu))
-        client.execute(t)
+        client.execute(t, **uu.keyArgs)
 
         # Save the password to root's private .my.cnf file
         root_sect = {'client': {'user': 'root',
@@ -1125,7 +1136,7 @@ class BaseMySqlRootAccess(object):
             uu = sql_query.SetPassword(user.name, host=user.host,
                                        new_password=user.password)
             t = text(str(uu))
-            client.execute(t)
+            client.execute(t, **uu.keyArgs)
 
             LOG.debug("CONF.root_grant: %(grant)s CONF.root_grant_option: "
                       "%(grant_option)s.",

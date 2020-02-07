@@ -249,7 +249,6 @@ class Revoke(Grant):
         # User and host from whom to revoke permission.
         # Optionally, password, too.
         whom = [("FROM %s" % self._user_host),
-                self._identity,
                 ]
         whom = [w for w in whom if w]
         return " ".join(whom)
@@ -313,6 +312,7 @@ class CreateUser(object):
     def keyArgs(self):
         return {'user': self.user,
                 'host': self._host,
+                'password': self._password,
                 }
 
     @property
@@ -324,14 +324,23 @@ class CreateUser(object):
     @property
     def _identity(self):
         if self.clear:
-            return "IDENTIFIED BY '%s'" % self.clear
+            return "IDENTIFIED BY "
         if self.hashed:
-            return "IDENTIFIED BY PASSWORD '%s'" % self.hashed
+            return "IDENTIFIED BY PASSWORD "
         return ""
+
+    @property
+    def _password(self):
+        if self.clear:
+            return self.clear
+        if self.hashed:
+            return self.hashed
+        return ""  
 
     def __str__(self):
         query = ["CREATE USER :user@:host",
                  self._identity,
+                 ":password",
                  ]
         query = [q for q in query if q]
         return " ".join(query) + ";"
@@ -365,20 +374,26 @@ class SetPassword(object):
         self.host = host or '%'
         self.new_password = new_password or ''
 
+    @property
+    def keyArgs(self):
+        return {'user': self.user,
+                'host': self.host,
+                'new_password': self.new_password,
+               }
+
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        properties = {'user_name': self.user,
-                      'user_host': self.host,
-                      'new_password': self.new_password}
         if (CONF.datastore_version == 'mariadb-10.1' or \
             CONF.datastore_version == 'mysql-5.6'):
-            return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
-                "PASSWORD('%(new_password)s');" % properties)
-        return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
-                "'%(new_password)s';" % properties)
-       
+            return ("SET PASSWORD FOR :user@:host = "
+                "PASSWORD(:new_password);")
+        else:
+            return ("SET PASSWORD FOR :user@:host = "
+                ":new_password;")
+
+ 
 class DropUser(object):
 
     def __init__(self, user, host='%'):
