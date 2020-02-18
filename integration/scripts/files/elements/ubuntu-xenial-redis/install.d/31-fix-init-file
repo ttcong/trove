@@ -22,6 +22,7 @@ Type=forking
 PIDFile=$REDIS_PID
 User=redis
 Group=redis
+LimitNOFILE=65536
 
 Environment=statedir=$REDIS_RUN_DIR
 PermissionsStartOnly=true
