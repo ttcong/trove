@@ -153,18 +153,19 @@ class VolumeDevice(object):
         """Wait for a fs to be mounted."""
         def wait_for_mount():
             return operating_system.is_mount(mount_point)
-
+        
+        # congtt: Check if volume is really not mounted.
+        # Sometime polling timeout but volume is mounted right after that ???
         try:
             utils.poll_until(wait_for_mount, sleep_time=1, time_out=timeout)
         except exception.PollTimeOut:
             LOG.debug("PollTimeOut exception")
-            return False
-        # Workaround:
-        # congtt: Unexpected exception. Sometimes it fails to catch PollTimeOut.
-        # We can go ahead because this is just a sleep-wait function.
+            if not operating_system.is_mount(mount_point):
+                return False
         except:
             LOG.debug("Unexpected exception")
-            return False
+            if not operating_system.is_mount(mount_point):
+                return False
 
         return True
 
@@ -175,7 +176,8 @@ class VolumeDevice(object):
         # an entry is put in the fstab file (like Trove does).
         # Thus it may be necessary to wait for the mount and then unmount
         # the fs again (since the volume was just attached).
-        if self._wait_for_mount(mount_point, timeout=2):
+        # congtt: Increase timeout from 2 to 5 seconds.
+        if self._wait_for_mount(mount_point, timeout=5):
             LOG.debug("Unmounting '%s' before resizing.", mount_point)
             self.unmount(mount_point)
         try:
