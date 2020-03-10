@@ -7,7 +7,7 @@ chmod 0600 /var/lib/mysql-files
 
 #Enable bin_log & relay_log by default. No conflict with trove-replica.
 touch /etc/mysql/conf.d/01-dbaas-custom.cnf_bk
-cat >/etc/mysql/conf.d/01-dbaas-custom_bk <<_EOF_
+cat >/etc/mysql/conf.d/01-dbaas-custom.cnf_bk <<_EOF_
 [mysqld]
 relay_log = mysql-relay-bin.log
 log_bin = mysql-bin.log
