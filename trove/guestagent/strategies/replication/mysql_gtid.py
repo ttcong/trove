@@ -14,6 +14,7 @@
 #    under the License.
 #
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 
 from trove.common import exception
 from trove.common.i18n import _
@@ -42,8 +43,12 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
             # provided we need to set the gtid_purged variable
             # before executing the CHANGE MASTER TO command
             last_gtid = self._read_last_master_gtid()
-            if last_gtid:
+            LOG.debug("last_gtid value is %s", last_gtid)
+            # fix ['mysql-bin.000001', '154', '\n'] still existed last_gtid
+            # with '\n' value
+            if last_gtid and len(last_gtid) != 1:
                 set_gtid_cmd = "SET GLOBAL gtid_purged='%s'" % last_gtid
+                LOG.debug("set gtid_purged with %s", set_gtid_cmd)
                 service.execute_on_client(set_gtid_cmd)
 
         logging_config = snapshot['log_position']
@@ -71,8 +76,8 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
         LOG.info("Reading last master GTID from %s", INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
-                row = f.read().split('\t')
-                return row[2]
+                row = f.read().split(b'\t')
+                return encodeutils.safe_decode(row[2])
         except (IOError, IndexError) as ex:
             LOG.exception(ex)
             raise self.UnableToDetermineLastMasterGTID(
