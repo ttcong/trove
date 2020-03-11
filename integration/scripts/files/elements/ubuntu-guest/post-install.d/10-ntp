@@ -1,7 +1,15 @@
 #!/bin/bash
 ntpfile=`mktemp`
 cat << EOF > $ntpfile
-server ntp.ubuntu.com iburst
+# Prod
+server 10.10.18.243 iburst
+fudge 10.10.18.243 stratum 1
+
+# Dev/Stg
+server 5.5.5.10 iburst
+fudge 5.5.5.10 stratum 5
+
+# Local
 server 127.127.1.0
 fudge 127.127.1.0 stratum 10
 EOF
