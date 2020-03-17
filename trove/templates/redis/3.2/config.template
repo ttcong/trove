@@ -30,33 +30,29 @@
 # include /path/to/local.conf
 # include /path/to/other.conf
 
-################################ GENERAL  #####################################
-
-# By default Redis does not run as a daemon. Use 'yes' if you need it.
-# Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
+################################## NETWORK #####################################
+# By default Redis listens for connections from all the network interfaces
+# available on the server. It is possible to listen to just one or multiple
+# interfaces using the "bind" configuration directive, followed by one or
+# more IP addresses.
 #
-# Trove currently requires the database to run as a service.
-daemonize yes
-
-# When running daemonized, Redis writes a pid file in /var/run/redis.pid by
-# default. You can specify a custom pid file location here.
+# Examples:
 #
-# This has to be a writable path.
-# Trove will override this property based on the underlying OS.
-pidfile /var/run/redis/redis-server.pid
-
-# Accept connections on the specified port, default is 6379.
-# If port 0 is specified Redis will not listen on a TCP socket.
-port 6379
-
-# TCP listen() backlog.
-#
-# In high requests-per-second environments you need an high backlog in order
-# to avoid slow clients connections issues. Note that the Linux kernel
-# will silently truncate it to the value of /proc/sys/net/core/somaxconn so
-# make sure to raise both the value of somaxconn and tcp_max_syn_backlog
-# in order to get the desired effect.
-tcp-backlog 511
+# bind 192.168.1.100 10.0.0.1
+# bind 127.0.0.1
+#	
+# ~~~ WARNING ~~~ If the computer running Redis is directly exposed to the	
+# internet, binding to all the interfaces is dangerous and will expose the	
+# instance to everybody on the internet. So by default we uncomment the	
+# following bind directive, that will force Redis to listen only into	
+# the IPv4 lookback interface address (this means Redis will be able to	
+# accept connections only from clients running into the same computer it	
+# is running).	
+#	
+# IF YOU ARE SURE YOU WANT YOUR INSTANCE TO LISTEN TO ALL THE INTERFACES	
+# JUST COMMENT THE FOLLOWING LINE.	
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+#bind 127.0.0.1	
 
 # Protected mode is a layer of security protection, in order to avoid that
 # Redis instances left open on the internet are accessed and exploited.
@@ -77,16 +73,21 @@ tcp-backlog 511
 # are explicitly listed using the "bind" directive.
 protected-mode no
 
-# By default Redis listens for connections from all the network interfaces
-# available on the server. It is possible to listen to just one or multiple
-# interfaces using the "bind" configuration directive, followed by one or
-# more IP addresses.
-#
-# Examples:
-#
-# bind 192.168.1.100 10.0.0.1
-# bind 127.0.0.1
+# Accept connections on the specified port, default is 6379.
+# If port 0 is specified Redis will not listen on a TCP socket.
+port 6379
 
+# TCP listen() backlog.
+#
+# In high requests-per-second environments you need an high backlog in order
+# to avoid slow clients connections issues. Note that the Linux kernel
+# will silently truncate it to the value of /proc/sys/net/core/somaxconn so
+# make sure to raise both the value of somaxconn and tcp_max_syn_backlog
+# in order to get the desired effect.
+tcp-backlog 511
+
+# Unix socket.
+#
 # Specify the path for the Unix socket that will be used to listen for
 # incoming connections. There is no default, so Redis will not listen
 # on a unix socket when not specified.
@@ -95,6 +96,8 @@ protected-mode no
 # Trove will override this property based on the underlying OS.
 # unixsocket /tmp/redis.sock
 # unixsocketperm 700
+unixsocket /var/run/redis/redis.sock
+unixsocketperm 777
 
 # Close the connection after a client is idle for N seconds (0 to disable)
 timeout 0
@@ -112,8 +115,24 @@ timeout 0
 # Note that to close the connection the double of the time is needed.
 # On other kernels the period depends on the kernel configuration.
 #
-# A reasonable value for this option is 60 seconds.
-tcp-keepalive 300
+# A reasonable value for this option is 300 seconds, which is the new	
+# Redis default starting with Redis 3.2.1.
+tcp-keepalive 60
+
+################################ GENERAL  #####################################
+
+# By default Redis does not run as a daemon. Use 'yes' if you need it.
+# Note that Redis will write a pid file in /var/run/redis.pid when daemonized.
+#
+# Trove currently requires the database to run as a service.
+daemonize yes
+
+# When running daemonized, Redis writes a pid file in /var/run/redis.pid by
+# default. You can specify a custom pid file location here.
+#
+# This has to be a writable path.
+# Trove will override this property based on the underlying OS.
+pidfile /var/run/redis/redis-server.pid
 
 # If you run Redis from upstart or systemd, Redis can interact with your
 # supervision tree. Options:
@@ -226,7 +245,7 @@ dbfilename dump.rdb
 #
 # This has to be an existing path to a writable directory.
 # Trove will override this property based on the underlying OS.
-dir /tmp
+dir /var/lib/redis
 
 ################################# REPLICATION #################################
 
@@ -416,6 +435,36 @@ slave-priority 100
 #
 # By default min-slaves-to-write is set to 0 (feature disabled) and
 # min-slaves-max-lag is set to 10.
+
+		
+# A Redis master is able to list the address and port of the attached	
+# slaves in different ways. For example the "INFO replication" section	
+# offers this information, which is used, among other tools, by	
+# Redis Sentinel in order to discover slave instances.	
+# Another place where this info is available is in the output of the	
+# "ROLE" command of a masteer.	
+#	
+# The listed IP and address normally reported by a slave is obtained	
+# in the following way:	
+#	
+#   IP: The address is auto detected by checking the peer address	
+#   of the socket used by the slave to connect with the master.	
+#	
+#   Port: The port is communicated by the slave during the replication	
+#   handshake, and is normally the port that the slave is using to	
+#   list for connections.	
+#	
+# However when port forwarding or Network Address Translation (NAT) is	
+# used, the slave may be actually reachable via different IP and port	
+# pairs. The following two options can be used by a slave in order to	
+# report to its master a specific set of IP and port, so that both INFO	
+# and ROLE will report those values.	
+#	
+# There is no need to use both the options if you need to override just	
+# the port or the IP address.	
+#	
+# slave-announce-ip 5.5.5.5	
+# slave-announce-port 1234
 
 ################################## SECURITY ###################################
 
@@ -868,12 +917,6 @@ notify-keyspace-events ""
 hash-max-ziplist-entries 512
 hash-max-ziplist-value 64
 
-# Similarly to hashes, small lists are also encoded in a special way in order
-# to save a lot of space. The special representation is only used when
-# you are under the following limits:
-list-max-ziplist-entries 512
-list-max-ziplist-value 64
-
 # Lists are also encoded in a special way to save a lot of space.
 # The number of entries allowed per internal list node can be specified
 # as a fixed maximum size or a maximum number of elements.
@@ -988,8 +1031,6 @@ activerehashing yes
 client-output-buffer-limit normal 0 0 0
 client-output-buffer-limit slave 256mb 64mb 60
 client-output-buffer-limit pubsub 32mb 8mb 60
-unixsocket /var/run/redis/redis.sock
-unixsocketperm 777
 
 # Redis calls an internal function to perform many background tasks, like
 # closing connections of clients in timeout, purging expired keys that are
