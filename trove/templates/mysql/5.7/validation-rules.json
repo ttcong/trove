@@ -15,13 +15,6 @@
             "type": "integer"
         },
         {
-            "name": "local_infile",
-            "restart_required": false,
-            "max": 0,
-            "min": 0,
-            "type": "integer"
-        },
-        {
             "name": "lower_case_table_names",
             "restart_required": true,
             "max": 1,
@@ -535,11 +528,6 @@
             "max": 512,
             "min": 1,
             "type": "integer"
-        },
-        {
-            "name": "innodb_background_drop_list_empty",
-            "restart_required": false,
-            "type": "boolean"
         },
         {
             "name": "innodb_buffer_pool_chunk_size",

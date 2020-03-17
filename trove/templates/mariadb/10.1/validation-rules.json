@@ -15,13 +15,6 @@
             "type": "integer"
         },
         {
-            "name": "local_infile",
-            "restart_required": false,
-            "max": 0,
-            "min": 0,
-            "type": "integer"
-        },
-        {
             "name": "lower_case_table_names",
             "restart_required": true,
             "max": 1,
@@ -169,13 +162,6 @@
             "type": "integer"
         },
         {
-            "name": "server_id",
-            "restart_required": false,
-            "max": 4294967295,
-            "min": 0,
-            "type": "integer"
-        },
-        {
             "name": "wait_timeout",
             "restart_required": false,
             "max": 31536000,
@@ -214,11 +200,6 @@
         },
         {
             "name": "collation_connection",
-            "restart_required": false,
-            "type": "string"
-        },
-        {
-            "name": "collation_database",
             "restart_required": false,
             "type": "string"
         },
